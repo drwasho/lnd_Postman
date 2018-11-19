@@ -1,0 +1,4395 @@
+{
+	"info": {
+		"_postman_id": "208bdb51-7459-42bf-a620-41539f8f3672",
+		"name": "LND REST API",
+		"description": "# Introduction\n\nWelcome to the REST API reference documentation for LND, the Lightning Network\nDaemon.\n\nThis site features the API documentation for Python and JavaScript, along with\nbarebones examples using `curl`, for HTTP requests. It is intended for those who\nalready understand how to work with LND. If this is your first time or you need\na refresher, you may consider perusing our LND developer site featuring a\ntutorial, resources and guides at [dev.lightning.community](https://dev.lightning.community).\n\nThe examples to the right assume that the there is a local `lnd` instance\nrunning and listening for REST connections on port 8080. `LND_DIR` will be used\nas a placeholder to denote the base directory of the `lnd` instance. By default,\nthis is `~/.lnd` on Linux and `~/Library/Application Support/Lnd` on macOS.\n\nAt the time of writing this documentation, two things are needed in order to\nmake an HTTP request to an `lnd` instance: a TLS/SSL connection and a macaroon\nused for RPC authentication. The examples to the right will show how these can\nbe used in order to make a successful, secure, and authenticated HTTP request.\n\nThe original `rpc.proto` file from which the gRPC documentation was generated\ncan be found [here](https://github.com/lightningnetwork/lnd/blob/master/lnrpc/rpc.proto).\n\nNOTE: The documentation is currently lacking how to receive streaming responses\nfrom streaming endpoints in JavaScript. If you would like to contribute this\nchange, please take a look at [https://github.com/lightninglabs/lightning-api](https://github.com/lightninglabs/lightning-api).\n\nNOTE: The `byte` field type must be set as the base64 encoded string\nrepresentation of a raw byte array.\n\nAlternatively, the gRPC documentation can be found [here](https://api.lightning.community/).\n\n## About Postman\n\nPostman is an excellent tool that allows a user to conveniently execute and test REST APIs. If you encounter any errors, or see anything out of date, please create and issue and I'll try and fix it asap.\n\n# Definitions\n\n## ChannelCloseSummaryClosureType\n\nThis definition has no parameters.\n\n\n## PendingChannelsResponseClosedChannel\n\nField | Type | Description\n----- | ---- | ----------- \nchannel | [PendingChannelsResponsePendingChannel](#pendingchannelsresponsependingchannel) | / The pending channel to be closed\nclosing_txid | string | / The transaction id of the closing transaction\n\n\n## PendingChannelsResponseForceClosedChannel\n\nField | Type | Description\n----- | ---- | ----------- \nchannel | [PendingChannelsResponsePendingChannel](#pendingchannelsresponsependingchannel) | / The pending channel to be force closed\nclosing_txid | string | / The transaction id of the closing transaction\nlimbo_balance | string | / The balance in satoshis encumbered in this pending channel\nmaturity_height | int64 | / The height at which funds can be sweeped into the wallet\nblocks_til_maturity | int32 | Remaining # of blocks until the commitment output can be swept. Negative values indicate how many blocks have passed since becoming mature.\nrecovered_balance | string | / The total value of funds successfully recovered from this channel\npending_htlcs | [array PendingHTLC](#pendinghtlc) | \n\n\n## PendingChannelsResponsePendingChannel\n\nField | Type | Description\n----- | ---- | ----------- \nremote_node_pub | string | \nchannel_point | string | \ncapacity | string | \nlocal_balance | string | \nremote_balance | string | \n\n\n## PendingChannelsResponsePendingOpenChannel\n\nField | Type | Description\n----- | ---- | ----------- \nchannel | [PendingChannelsResponsePendingChannel](#pendingchannelsresponsependingchannel) | / The pending channel\nconfirmation_height | int64 | / The height at which this channel will be confirmed\ncommit_fee | string | * The amount calculated to be paid in fees for the current set of commitment transactions. The fee amount is persisted with the channel in order to allow the fee amount to be removed and recalculated with each channel state update, including updates that happen after a system restart.\ncommit_weight | string | / The weight of the commitment transaction\nfee_per_kw | string | * The required number of satoshis per kilo-weight that the requester will pay at all times, for both the funding transaction and commitment transaction. This value can later be updated once the channel is open.\n\n\n## PendingChannelsResponseWaitingCloseChannel\n\nField | Type | Description\n----- | ---- | ----------- \nchannel | [PendingChannelsResponsePendingChannel](#pendingchannelsresponsependingchannel) | / The pending channel waiting for closing tx to confirm\nlimbo_balance | string | / The balance in satoshis encumbered in this channel\n\n\n## AbandonChannelResponse\n\nThis definition has no parameters.\n\n\n## AddInvoiceResponse\n\nField | Type | Description\n----- | ---- | ----------- \nr_hash | byte | \npayment_request | string | * A bare-bones invoice for a payment within the Lightning Network.  With the details of the invoice, the sender has all the data necessary to send a payment to the recipient.\nadd_index | string | * The \"add\" index of this invoice. Each newly created invoice will increment this index making it monotonically increasing. Callers to the SubscribeInvoices call can use this to instantly get notified of all added invoices with an add_index greater than this one.\n\n\n## ChangePasswordRequest\n\nField | Type | Description\n----- | ---- | ----------- \ncurrent_password | byte | * current_password should be the current valid passphrase used to unlock the daemon.\nnew_password | byte | * new_password should be the new passphrase that will be needed to unlock the daemon.\n\n\n## ChangePasswordResponse\n\nThis definition has no parameters.\n\n\n## Channel\n\nField | Type | Description\n----- | ---- | ----------- \nactive | boolean | / Whether this channel is active or not\nremote_pubkey | string | / The identity pubkey of the remote node\nchannel_point | string | * The outpoint (txid:index) of the funding transaction. With this value, Bob will be able to generate a signature for Alice's version of the commitment transaction.\nchan_id | string | * The unique channel ID for the channel. The first 3 bytes are the block height, the next 3 the index within the block, and the last 2 bytes are the output index for the channel.\ncapacity | string | / The total amount of funds held in this channel\nlocal_balance | string | / This node's current balance in this channel\nremote_balance | string | / The counterparty's current balance in this channel\ncommit_fee | string | * The amount calculated to be paid in fees for the current set of commitment transactions. The fee amount is persisted with the channel in order to allow the fee amount to be removed and recalculated with each channel state update, including updates that happen after a system restart.\ncommit_weight | string | / The weight of the commitment transaction\nfee_per_kw | string | * The required number of satoshis per kilo-weight that the requester will pay at all times, for both the funding transaction and commitment transaction. This value can later be updated once the channel is open.\nunsettled_balance | string | / The unsettled balance in this channel\ntotal_satoshis_sent | string | * The total number of satoshis we've sent within this channel.\ntotal_satoshis_received | string | * The total number of satoshis we've received within this channel.\nnum_updates | string | * The total number of updates conducted within this channel.\npending_htlcs | [array HTLC](#htlc) | * The list of active, uncleared HTLCs currently pending within the channel.\ncsv_delay | int64 | * The CSV delay expressed in relative blocks. If the channel is force closed, we'll need to wait for this many blocks before we can regain our funds.\nprivate | boolean | / Whether this channel is advertised to the network or not\n\n\n## ChannelBalanceResponse\n\nField | Type | Description\n----- | ---- | ----------- \nbalance | string | / Sum of channels balances denominated in satoshis\npending_open_balance | string | / Sum of channels pending balances denominated in satoshis\n\n\n## ChannelCloseSummary\n\nField | Type | Description\n----- | ---- | ----------- \nchannel_point | string | / The outpoint (txid:index) of the funding transaction.\nchan_id | string | /  The unique channel ID for the channel.\nchain_hash | string | / The hash of the genesis block that this channel resides within.\nclosing_tx_hash | string | / The txid of the transaction which ultimately closed this channel.\nremote_pubkey | string | / Public key of the remote peer that we formerly had a channel with.\ncapacity | string | / Total capacity of the channel.\nclose_height | int64 | / Height at which the funding transaction was spent.\nsettled_balance | string | / Settled balance at the time of channel closure\ntime_locked_balance | string | / The sum of all the time-locked outputs at the time of channel closure\nclose_type | [ChannelCloseSummaryClosureType](#channelclosesummaryclosuretype) | / Details on how the channel was closed.\n\n\n## ChannelCloseUpdate\n\nField | Type | Description\n----- | ---- | ----------- \nclosing_txid | byte | \nsuccess | boolean | \n\n\n## ChannelEdge\n\nField | Type | Description\n----- | ---- | ----------- \nchannel_id | string | * The unique channel ID for the channel. The first 3 bytes are the block height, the next 3 the index within the block, and the last 2 bytes are the output index for the channel.\nchan_point | string | \nlast_update | int64 | \nnode1_pub | string | \nnode2_pub | string | \ncapacity | string | \nnode1_policy | [RoutingPolicy](#routingpolicy) | \nnode2_policy | [RoutingPolicy](#routingpolicy) | \n\n\n## ChannelEdgeUpdate\n\nField | Type | Description\n----- | ---- | ----------- \nchan_id | string | * The unique channel ID for the channel. The first 3 bytes are the block height, the next 3 the index within the block, and the last 2 bytes are the output index for the channel.\nchan_point | [ChannelPoint](#channelpoint) | \ncapacity | string | \nrouting_policy | [RoutingPolicy](#routingpolicy) | \nadvertising_node | string | \nconnecting_node | string | \n\n\n## ChannelFeeReport\n\nField | Type | Description\n----- | ---- | ----------- \nchan_point | string | / The channel that this fee report belongs to.\nbase_fee_msat | string | / The base fee charged regardless of the number of milli-satoshis sent.\nfee_per_mil | string | / The amount charged per milli-satoshis transferred expressed in millionths of a satoshi.\nfee_rate | double | / The effective fee rate in milli-satoshis. Computed by dividing the fee_per_mil value by 1 million.\n\n\n## ChannelGraph\n\nField | Type | Description\n----- | ---- | ----------- \nnodes | [array LightningNode](#lightningnode) | / The list of `LightningNode`s in this channel graph\nedges | [array ChannelEdge](#channeledge) | / The list of `ChannelEdge`s in this channel graph\n\n\n## ChannelOpenUpdate\n\nField | Type | Description\n----- | ---- | ----------- \nchannel_point | [ChannelPoint](#channelpoint) | \n\n\n## ChannelPoint\n\nField | Type | Description\n----- | ---- | ----------- \nfunding_txid_bytes | byte | / Txid of the funding transaction\nfunding_txid_str | string | / Hex-encoded string representing the funding transaction\noutput_index | int64 | / The index of the output of the funding transaction\n\n\n## CloseStatusUpdate\n\nField | Type | Description\n----- | ---- | ----------- \nclose_pending | [PendingUpdate](#pendingupdate) | \nconfirmation | [ConfirmationUpdate](#confirmationupdate) | \nchan_close | [ChannelCloseUpdate](#channelcloseupdate) | \n\n\n## ClosedChannelUpdate\n\nField | Type | Description\n----- | ---- | ----------- \nchan_id | string | * The unique channel ID for the channel. The first 3 bytes are the block height, the next 3 the index within the block, and the last 2 bytes are the output index for the channel.\ncapacity | string | \nclosed_height | int64 | \nchan_point | [ChannelPoint](#channelpoint) | \n\n\n## ClosedChannelsResponse\n\nField | Type | Description\n----- | ---- | ----------- \nchannels | [array ChannelCloseSummary](#channelclosesummary) | \n\n\n## ConfirmationUpdate\n\nField | Type | Description\n----- | ---- | ----------- \nblock_sha | byte | \nblock_height | int32 | \nnum_confs_left | int64 | \n\n\n## ConnectPeerRequest\n\nField | Type | Description\n----- | ---- | ----------- \naddr | [LightningAddress](#lightningaddress) | / Lightning address of the peer, in the format `<pubkey>@host`\nperm | boolean | * If set, the daemon will attempt to persistently connect to the target peer.  Otherwise, the call will be synchronous.\n\n\n## ConnectPeerResponse\n\nThis definition has no parameters.\n\n\n## DebugLevelResponse\n\nField | Type | Description\n----- | ---- | ----------- \nsub_systems | string | \n\n\n## DeleteAllPaymentsResponse\n\nThis definition has no parameters.\n\n\n## DisconnectPeerResponse\n\nThis definition has no parameters.\n\n\n## FeeLimit\n\nField | Type | Description\n----- | ---- | ----------- \nfixed | string | / The fee limit expressed as a fixed amount of satoshis.\npercent | string | / The fee limit expressed as a percentage of the payment amount.\n\n\n## FeeReportResponse\n\nField | Type | Description\n----- | ---- | ----------- \nchannel_fees | [array ChannelFeeReport](#channelfeereport) | / An array of channel fee reports which describes the current fee schedule for each channel.\nday_fee_sum | string | / The total amount of fee revenue (in satoshis) the switch has collected over the past 24 hrs.\nweek_fee_sum | string | / The total amount of fee revenue (in satoshis) the switch has collected over the past 1 week.\nmonth_fee_sum | string | / The total amount of fee revenue (in satoshis) the switch has collected over the past 1 month.\n\n\n## ForwardingEvent\n\nField | Type | Description\n----- | ---- | ----------- \ntimestamp | string | / Timestamp is the time (unix epoch offset) that this circuit was completed.\nchan_id_in | string | / The incoming channel ID that carried the HTLC that created the circuit.\nchan_id_out | string | / The outgoing channel ID that carried the preimage that completed the circuit.\namt_in | string | / The total amount of the incoming HTLC that created half the circuit.\namt_out | string | / The total amount of the outgoign HTLC that created the second half of the circuit.\nfee | string | / The total fee that this payment circuit carried.\n\n\n## ForwardingHistoryRequest\n\nField | Type | Description\n----- | ---- | ----------- \nstart_time | string | / Start time is the starting point of the forwarding history request. All records beyond this point will be included, respecting the end time, and the index offset.\nend_time | string | / End time is the end point of the forwarding history request. The response will carry at most 50k records between the start time and the end time. The index offset can be used to implement pagination.\nindex_offset | int64 | / Index offset is the offset in the time series to start at. As each response can only contain 50k records, callers can use this to skip around within a packed time series.\nnum_max_events | int64 | / The max number of events to return in the response to this query.\n\n\n## ForwardingHistoryResponse\n\nField | Type | Description\n----- | ---- | ----------- \nforwarding_events | [array ForwardingEvent](#forwardingevent) | / A list of forwarding events from the time slice of the time series specified in the request.\nlast_offset_index | int64 | / The index of the last time in the set of returned forwarding events. Can be used to seek further, pagination style.\n\n\n## GenSeedResponse\n\nField | Type | Description\n----- | ---- | ----------- \ncipher_seed_mnemonic | array string | * cipher_seed_mnemonic is a 24-word mnemonic that encodes a prior aezeed cipher seed obtained by the user. This field is optional, as if not provided, then the daemon will generate a new cipher seed for the user. Otherwise, then the daemon will attempt to recover the wallet state linked to this cipher seed.\nenciphered_seed | byte | * enciphered_seed are the raw aezeed cipher seed bytes. This is the raw cipher text before run through our mnemonic encoding scheme.\n\n\n## GetInfoResponse\n\nField | Type | Description\n----- | ---- | ----------- \nidentity_pubkey | string | / The identity pubkey of the current node.\nalias | string | / If applicable, the alias of the current node, e.g. \"bob\"\nnum_pending_channels | int64 | / Number of pending channels\nnum_active_channels | int64 | / Number of active channels\nnum_peers | int64 | / Number of peers\nblock_height | int64 | / The node's current view of the height of the best block\nblock_hash | string | / The node's current view of the hash of the best block\nsynced_to_chain | boolean | / Whether the wallet's view is synced to the main chain\ntestnet | boolean | / Whether the current node is connected to testnet\nchains | array string | / A list of active chains the node is connected to\nuris | array string | / The URIs of the current node.\nbest_header_timestamp | string | / Timestamp of the block best known to the wallet\nversion | string | / The version of the LND software that the node is running.\n\n\n## GraphTopologyUpdate\n\nField | Type | Description\n----- | ---- | ----------- \nnode_updates | [array NodeUpdate](#nodeupdate) | \nchannel_updates | [array ChannelEdgeUpdate](#channeledgeupdate) | \nclosed_chans | [array ClosedChannelUpdate](#closedchannelupdate) | \n\n\n## HTLC\n\nField | Type | Description\n----- | ---- | ----------- \nincoming | boolean | \namount | string | \nhash_lock | byte | \nexpiration_height | int64 | \n\n\n## Hop\n\nField | Type | Description\n----- | ---- | ----------- \nchan_id | string | * The unique channel ID for the channel. The first 3 bytes are the block height, the next 3 the index within the block, and the last 2 bytes are the output index for the channel.\nchan_capacity | string | \namt_to_forward | string | \nfee | string | \nexpiry | int64 | \namt_to_forward_msat | string | \nfee_msat | string | \n\n\n## HopHint\n\nField | Type | Description\n----- | ---- | ----------- \nnode_id | string | / The public key of the node at the start of the channel.\nchan_id | string | / The unique identifier of the channel.\nfee_base_msat | int64 | / The base fee of the channel denominated in millisatoshis.\nfee_proportional_millionths | int64 | * The fee rate of the channel for sending one satoshi across it denominated in millionths of a satoshi.\ncltv_expiry_delta | int64 | / The time-lock delta of the channel.\n\n\n## InitWalletRequest\n\nField | Type | Description\n----- | ---- | ----------- \nwallet_password | byte | * wallet_password is the passphrase that should be used to encrypt the wallet. This MUST be at least 8 chars in length. After creation, this password is required to unlock the daemon.\ncipher_seed_mnemonic | array string | * cipher_seed_mnemonic is a 24-word mnemonic that encodes a prior aezeed cipher seed obtained by the user. This may have been generated by the GenSeed method, or be an existing seed.\naezeed_passphrase | byte | * aezeed_passphrase is an optional user provided passphrase that will be used to encrypt the generated aezeed cipher seed.\nrecovery_window | int32 | * recovery_window is an optional argument specifying the address lookahead when restoring a wallet seed. The recovery window applies to each invdividual branch of the BIP44 derivation paths. Supplying a recovery window of zero indicates that no addresses should be recovered, such after the first initialization of the wallet.\n\n\n## InitWalletResponse\n\nThis definition has no parameters.\n\n\n## Invoice\n\nField | Type | Description\n----- | ---- | ----------- \nmemo | string | * An optional memo to attach along with the invoice. Used for record keeping purposes for the invoice's creator, and will also be set in the description field of the encoded payment request if the description_hash field is not being used.\nreceipt | byte | / An optional cryptographic receipt of payment\nr_preimage | byte | * The hex-encoded preimage (32 byte) which will allow settling an incoming HTLC payable to this preimage\nr_hash | byte | / The hash of the preimage\nvalue | string | / The value of this invoice in satoshis\nsettled | boolean | / Whether this invoice has been fulfilled\ncreation_date | string | / When this invoice was created\nsettle_date | string | / When this invoice was settled\npayment_request | string | * A bare-bones invoice for a payment within the Lightning Network.  With the details of the invoice, the sender has all the data necessary to send a payment to the recipient.\ndescription_hash | byte | * Hash (SHA-256) of a description of the payment. Used if the description of payment (memo) is too long to naturally fit within the description field of an encoded payment request.\nexpiry | string | / Payment request expiry time in seconds. Default is 3600 (1 hour).\nfallback_addr | string | / Fallback on-chain address.\ncltv_expiry | string | / Delta to use for the time-lock of the CLTV extended to the final hop.\nroute_hints | [array RouteHint](#routehint) | * Route hints that can each be individually used to assist in reaching the invoice's destination.\nprivate | boolean | / Whether this invoice should include routing hints for private channels.\nadd_index | string | * The \"add\" index of this invoice. Each newly created invoice will increment this index making it monotonically increasing. Callers to the SubscribeInvoices call can use this to instantly get notified of all added invoices with an add_index greater than this one.\nsettle_index | string | * The \"settle\" index of this invoice. Each newly settled invoice will increment this index making it monotonically increasing. Callers to the SubscribeInvoices call can use this to instantly get notified of all settled invoices with an settle_index greater than this one.\namt_paid | string | / Deprecated, use amt_paid_sat or amt_paid_msat.\namt_paid_sat | string | * The amount that was accepted for this invoice, in satoshis. This will ONLY be set if this invoice has been settled. We provide this field as if the invoice was created with a zero value, then we need to record what amount was ultimately accepted. Additionally, it's possible that the sender paid MORE that was specified in the original invoice. So we'll record that here as well.\namt_paid_msat | string | * The amount that was accepted for this invoice, in millisatoshis. This will ONLY be set if this invoice has been settled. We provide this field as if the invoice was created with a zero value, then we need to record what amount was ultimately accepted. Additionally, it's possible that the sender paid MORE that was specified in the original invoice. So we'll record that here as well.\n\n\n## LightningAddress\n\nField | Type | Description\n----- | ---- | ----------- \npubkey | string | / The identity pubkey of the Lightning node\nhost | string | / The network location of the lightning node, e.g. `69.69.69.69:1337` or `localhost:10011`\n\n\n## LightningNode\n\nField | Type | Description\n----- | ---- | ----------- \nlast_update | int64 | \npub_key | string | \nalias | string | \naddresses | [array NodeAddress](#nodeaddress) | \ncolor | string | \n\n\n## ListChannelsResponse\n\nField | Type | Description\n----- | ---- | ----------- \nchannels | [array Channel](#channel) | / The list of active channels\n\n\n## ListInvoiceResponse\n\nField | Type | Description\n----- | ---- | ----------- \ninvoices | [array Invoice](#invoice) | * A list of invoices from the time slice of the time series specified in the request.\nlast_index_offset | string | * The index of the last item in the set of returned invoices. This can be used to seek further, pagination style.\nfirst_index_offset | string | * The index of the last item in the set of returned invoices. This can be used to seek backwards, pagination style.\n\n\n## ListPaymentsResponse\n\nField | Type | Description\n----- | ---- | ----------- \npayments | [array Payment](#payment) | / The list of payments\n\n\n## ListPeersResponse\n\nField | Type | Description\n----- | ---- | ----------- \npeers | [array Peer](#peer) | / The list of currently connected peers\n\n\n## NetworkInfo\n\nField | Type | Description\n----- | ---- | ----------- \ngraph_diameter | int64 | \navg_out_degree | double | \nmax_out_degree | int64 | \nnum_nodes | int64 | \nnum_channels | int64 | \ntotal_network_capacity | string | \navg_channel_size | double | \nmin_channel_size | string | \nmax_channel_size | string | \n\n\n## NewAddressResponse\n\nField | Type | Description\n----- | ---- | ----------- \naddress | string | / The newly generated wallet address\n\n\n## NodeAddress\n\nField | Type | Description\n----- | ---- | ----------- \nnetwork | string | \naddr | string | \n\n\n## NodeInfo\n\nField | Type | Description\n----- | ---- | ----------- \nnode | [LightningNode](#lightningnode) | * An individual vertex/node within the channel graph. A node is connected to other nodes by one or more channel edges emanating from it. As the graph is directed, a node will also have an incoming edge attached to it for each outgoing edge.\nnum_channels | int64 | \ntotal_capacity | string | \n\n\n## NodeUpdate\n\nField | Type | Description\n----- | ---- | ----------- \naddresses | array string | \nidentity_key | string | \nglobal_features | byte | \nalias | string | \n\n\n## OpenChannelRequest\n\nField | Type | Description\n----- | ---- | ----------- \nnode_pubkey | byte | / The pubkey of the node to open a channel with\nnode_pubkey_string | string | / The hex encoded pubkey of the node to open a channel with\nlocal_funding_amount | string | / The number of satoshis the wallet should commit to the channel\npush_sat | string | / The number of satoshis to push to the remote side as part of the initial commitment state\ntarget_conf | int32 | / The target number of blocks that the funding transaction should be confirmed by.\nsat_per_byte | string | / A manual fee rate set in sat/byte that should be used when crafting the funding transaction.\nprivate | boolean | / Whether this channel should be private, not announced to the greater network.\nmin_htlc_msat | string | / The minimum value in millisatoshi we will require for incoming HTLCs on the channel.\nremote_csv_delay | int64 | / The delay we require on the remote's commitment transaction. If this is not set, it will be scaled automatically with the channel size.\nmin_confs | int32 | / The minimum number of confirmations each one of your outputs used for the funding transaction must satisfy.\nspend_unconfirmed | boolean | / Whether unconfirmed outputs should be used as inputs for the funding transaction.\n\n\n## OpenStatusUpdate\n\nField | Type | Description\n----- | ---- | ----------- \nchan_pending | [PendingUpdate](#pendingupdate) | \nconfirmation | [ConfirmationUpdate](#confirmationupdate) | \nchan_open | [ChannelOpenUpdate](#channelopenupdate) | \n\n\n## PayReq\n\nField | Type | Description\n----- | ---- | ----------- \ndestination | string | \npayment_hash | string | \nnum_satoshis | string | \ntimestamp | string | \nexpiry | string | \ndescription | string | \ndescription_hash | string | \nfallback_addr | string | \ncltv_expiry | string | \nroute_hints | [array RouteHint](#routehint) | \n\n\n## Payment\n\nField | Type | Description\n----- | ---- | ----------- \npayment_hash | string | / The payment hash\nvalue | string | / Deprecated, use value_sat or value_msat.\ncreation_date | string | / The date of this payment\npath | array string | / The path this payment took\nfee | string | / The fee paid for this payment in satoshis\npayment_preimage | string | / The payment preimage\nvalue_sat | string | / The value of the payment in satoshis\nvalue_msat | string | / The value of the payment in milli-satoshis\n\n\n## Peer\n\nField | Type | Description\n----- | ---- | ----------- \npub_key | string | / The identity pubkey of the peer\naddress | string | / Network address of the peer; eg `127.0.0.1:10011`\nbytes_sent | string | / Bytes of data transmitted to this peer\nbytes_recv | string | / Bytes of data transmitted from this peer\nsat_sent | string | / Satoshis sent to this peer\nsat_recv | string | / Satoshis received from this peer\ninbound | boolean | / A channel is inbound if the counterparty initiated the channel\nping_time | string | / Ping time to this peer\n\n\n## PendingChannelsResponse\n\nField | Type | Description\n----- | ---- | ----------- \ntotal_limbo_balance | string | / The balance in satoshis encumbered in pending channels\npending_open_channels | [array PendingChannelsResponsePendingOpenChannel](#pendingchannelsresponsependingopenchannel) | / Channels pending opening\npending_closing_channels | [array PendingChannelsResponseClosedChannel](#pendingchannelsresponseclosedchannel) | / Channels pending closing\npending_force_closing_channels | [array PendingChannelsResponseForceClosedChannel](#pendingchannelsresponseforceclosedchannel) | / Channels pending force closing\nwaiting_close_channels | [array PendingChannelsResponseWaitingCloseChannel](#pendingchannelsresponsewaitingclosechannel) | / Channels waiting for closing tx to confirm\n\n\n## PendingHTLC\n\nField | Type | Description\n----- | ---- | ----------- \nincoming | boolean | / The direction within the channel that the htlc was sent\namount | string | / The total value of the htlc\noutpoint | string | / The final output to be swept back to the user's wallet\nmaturity_height | int64 | / The next block height at which we can spend the current stage\nblocks_til_maturity | int32 | * The number of blocks remaining until the current stage can be swept. Negative values indicate how many blocks have passed since becoming mature.\nstage | int64 | / Indicates whether the htlc is in its first or second stage of recovery\n\n\n## PendingUpdate\n\nField | Type | Description\n----- | ---- | ----------- \ntxid | byte | \noutput_index | int64 | \n\n\n## PolicyUpdateRequest\n\nField | Type | Description\n----- | ---- | ----------- \nglobal | boolean | / If set, then this update applies to all currently active channels.\nchan_point | [ChannelPoint](#channelpoint) | / If set, this update will target a specific channel.\nbase_fee_msat | string | / The base fee charged regardless of the number of milli-satoshis sent.\nfee_rate | double | / The effective fee rate in milli-satoshis. The precision of this value goes up to 6 decimal places, so 1e-6.\ntime_lock_delta | int64 | / The required timelock delta for HTLCs forwarded over the channel.\n\n\n## PolicyUpdateResponse\n\nThis definition has no parameters.\n\n\n## QueryRoutesResponse\n\nField | Type | Description\n----- | ---- | ----------- \nroutes | [array Route](#route) | \n\n\n## Route\n\nField | Type | Description\n----- | ---- | ----------- \ntotal_time_lock | int64 | * The cumulative (final) time lock across the entire route.  This is the CLTV value that should be extended to the first hop in the route. All other hops will decrement the time-lock as advertised, leaving enough time for all hops to wait for or present the payment preimage to complete the payment.\ntotal_fees | string | * The sum of the fees paid at each hop within the final route.  In the case of a one-hop payment, this value will be zero as we don't need to pay a fee it ourself.\ntotal_amt | string | * The total amount of funds required to complete a payment over this route. This value includes the cumulative fees at each hop. As a result, the HTLC extended to the first-hop in the route will need to have at least this many satoshis, otherwise the route will fail at an intermediate node due to an insufficient amount of fees.\nhops | [array Hop](#hop) | * Contains details concerning the specific forwarding details at each hop.\ntotal_fees_msat | string | * The total fees in millisatoshis.\ntotal_amt_msat | string | * The total amount in millisatoshis.\n\n\n## RouteHint\n\nField | Type | Description\n----- | ---- | ----------- \nhop_hints | [array HopHint](#hophint) | * A list of hop hints that when chained together can assist in reaching a specific destination.\n\n\n## RoutingPolicy\n\nField | Type | Description\n----- | ---- | ----------- \ntime_lock_delta | int64 | \nmin_htlc | string | \nfee_base_msat | string | \nfee_rate_milli_msat | string | \ndisabled | boolean | \n\n\n## SendCoinsRequest\n\nField | Type | Description\n----- | ---- | ----------- \naddr | string | / The address to send coins to\namount | string | / The amount in satoshis to send\ntarget_conf | int32 | / The target number of blocks that this transaction should be confirmed by.\nsat_per_byte | string | / A manual fee rate set in sat/byte that should be used when crafting the transaction.\n\n\n## SendCoinsResponse\n\nField | Type | Description\n----- | ---- | ----------- \ntxid | string | / The transaction ID of the transaction\n\n\n## SendManyResponse\n\nField | Type | Description\n----- | ---- | ----------- \ntxid | string | / The id of the transaction\n\n\n## SendRequest\n\nField | Type | Description\n----- | ---- | ----------- \ndest | byte | / The identity pubkey of the payment recipient\ndest_string | string | / The hex-encoded identity pubkey of the payment recipient\namt | string | / Number of satoshis to send.\npayment_hash | byte | / The hash to use within the payment's HTLC\npayment_hash_string | string | / The hex-encoded hash to use within the payment's HTLC\npayment_request | string | * A bare-bones invoice for a payment within the Lightning Network.  With the details of the invoice, the sender has all the data necessary to send a payment to the recipient.\nfinal_cltv_delta | int32 | * The CLTV delta from the current height that should be used to set the timelock for the final hop.\nfee_limit | [FeeLimit](#feelimit) | * The maximum number of satoshis that will be paid as a fee of the payment. This value can be represented either as a percentage of the amount being sent, or as a fixed amount of the maximum fee the user is willing the pay to send the payment.\n\n\n## SendResponse\n\nField | Type | Description\n----- | ---- | ----------- \npayment_error | string | \npayment_preimage | byte | \npayment_route | [Route](#route) | \n\n\n## SendToRouteRequest\n\nField | Type | Description\n----- | ---- | ----------- \npayment_hash | byte | / The payment hash to use for the HTLC.\npayment_hash_string | string | / An optional hex-encoded payment hash to be used for the HTLC.\nroutes | [array Route](#route) | / The set of routes that should be used to attempt to complete the payment.\n\n\n## SignMessageResponse\n\nField | Type | Description\n----- | ---- | ----------- \nsignature | string | / The signature for the given message\n\n\n## StopResponse\n\nThis definition has no parameters.\n\n\n## Transaction\n\nField | Type | Description\n----- | ---- | ----------- \ntx_hash | string | / The transaction hash\namount | string | / The transaction amount, denominated in satoshis\nnum_confirmations | int32 | / The number of confirmations\nblock_hash | string | / The hash of the block this transaction was included in\nblock_height | int32 | / The height of the block this transaction was included in\ntime_stamp | string | / Timestamp of this transaction\ntotal_fees | string | / Fees paid for this transaction\ndest_addresses | array string | / Addresses that received funds for this transaction\n\n\n## TransactionDetails\n\nField | Type | Description\n----- | ---- | ----------- \ntransactions | [array Transaction](#transaction) | / The list of transactions relevant to the wallet.\n\n\n## UnlockWalletRequest\n\nField | Type | Description\n----- | ---- | ----------- \nwallet_password | byte | * wallet_password should be the current valid passphrase for the daemon. This will be required to decrypt on-disk material that the daemon requires to function properly.\nrecovery_window | int32 | * recovery_window is an optional argument specifying the address lookahead when restoring a wallet seed. The recovery window applies to each invdividual branch of the BIP44 derivation paths. Supplying a recovery window of zero indicates that no addresses should be recovered, such after the first initialization of the wallet.\n\n\n## UnlockWalletResponse\n\nThis definition has no parameters.\n\n\n## VerifyMessageResponse\n\nField | Type | Description\n----- | ---- | ----------- \nvalid | boolean | / Whether the signature was valid over the given message\npubkey | string | / The pubkey recovered from the signature\n\n\n## WalletBalanceResponse\n\nField | Type | Description\n----- | ---- | ----------- \ntotal_balance | string | / The balance of the wallet\nconfirmed_balance | string | / The confirmed balance of a wallet(with >= 1 confirmations)\nunconfirmed_balance | string | / The unconfirmed balance of a wallet(with 0 confirmations)\n",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Balance",
+			"item": [
+				{
+					"name": "/v1/balance/blockchain",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Grpc-Metadata-macaroon",
+								"value": "macaroon",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{http}}://{{url}}:{{port}}/v1/balance/blockchain",
+							"protocol": "{{http}}",
+							"host": [
+								"{{url}}"
+							],
+							"port": "{{port}}",
+							"path": [
+								"v1",
+								"balance",
+								"blockchain"
+							]
+						},
+						"description": "### GET /v1/balance/blockchain\nWalletBalance returns total unspent outputs(confirmed and unconfirmed), all confirmed unspent outputs and all unconfirmed unspent outputs under control of the wallet.\n\nThis request has no parameters.\n\n### Response \n\nField | Type | Description\n----- | ---- | ----------- \ntotal_balance | string | / The balance of the wallet \nconfirmed_balance | string | / The confirmed balance of a wallet(with >= 1 confirmations) \nunconfirmed_balance | string | / The unconfirmed balance of a wallet(with 0 confirmations)"
+					},
+					"response": [
+						{
+							"name": "/v1/balance/blockchain",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{http}}://{{url}}:{{port}}/v1/balance/blockchain",
+									"protocol": "{{http}}",
+									"host": [
+										"{{url}}"
+									],
+									"port": "{{port}}",
+									"path": [
+										"v1",
+										"balance",
+										"blockchain"
+									]
+								}
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": "plain",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "text/plain; charset=utf-8"
+								},
+								{
+									"key": "X-Content-Type-Options",
+									"value": "nosniff"
+								},
+								{
+									"key": "Date",
+									"value": "Mon, 19 Nov 2018 03:53:40 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "19"
+								}
+							],
+							"cookie": [],
+							"body": "{ \n    \"total_balance\": <string>, \n    \"confirmed_balance\": <string>, \n    \"unconfirmed_balance\": <string>, \n}"
+						}
+					]
+				},
+				{
+					"name": "/v1/balance/channels",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Grpc-Metadata-macaroon",
+								"type": "text",
+								"value": "macaroon"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{http}}://{{url}}:{{port}}/v1/balance/channels",
+							"protocol": "{{http}}",
+							"host": [
+								"{{url}}"
+							],
+							"port": "{{port}}",
+							"path": [
+								"v1",
+								"balance",
+								"channels"
+							]
+						},
+						"description": "### GET /v1/balance/channels\nChannelBalance returns the total funds available across all open channels in satoshis.\n\nThis request has no parameters.\n\n### Response \n\nField | Type | Description\n----- | ---- | ----------- \nbalance | string | / Sum of channels balances denominated in satoshis \npending_open_balance | string | / Sum of channels pending balances denominated in satoshis"
+					},
+					"response": [
+						{
+							"name": "/v1/balance/blockchain",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{http}}://{{url}}:{{port}}/v1/balance/blockchain",
+									"protocol": "{{http}}",
+									"host": [
+										"{{url}}"
+									],
+									"port": "{{port}}",
+									"path": [
+										"v1",
+										"balance",
+										"blockchain"
+									]
+								}
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": "plain",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "text/plain; charset=utf-8"
+								},
+								{
+									"key": "X-Content-Type-Options",
+									"value": "nosniff"
+								},
+								{
+									"key": "Date",
+									"value": "Mon, 19 Nov 2018 03:53:40 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "19"
+								}
+							],
+							"cookie": [],
+							"body": "{ \n    \"total_balance\": <string>, \n    \"confirmed_balance\": <string>, \n    \"unconfirmed_balance\": <string>, \n}"
+						},
+						{
+							"name": "/v1/balance/channels",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Grpc-Metadata-macaroon",
+										"type": "text",
+										"value": "macaroon"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{http}}://{{url}}:{{port}}/v1/balance/channels",
+									"protocol": "{{http}}",
+									"host": [
+										"{{url}}"
+									],
+									"port": "{{port}}",
+									"path": [
+										"v1",
+										"balance",
+										"channels"
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": "{ \n    \"balance\": <string>, \n    \"pending_open_balance\": <string>, \n}"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Channels",
+			"item": [
+				{
+					"name": "/v1/channels",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Grpc-Metadata-macaroon",
+								"type": "text",
+								"value": "macaroon"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{http}}://{{url}}:{{port}}/v1/channels",
+							"protocol": "{{http}}",
+							"host": [
+								"{{url}}"
+							],
+							"port": "{{port}}",
+							"path": [
+								"v1",
+								"channels"
+							]
+						},
+						"description": "ListChannels returns a description of all the open channels that this node is a participant in.\n\nField | Type | Placement | Description\n----- | :----: | :---------: | -----------: \nactive_only | boolean | query |  |\ninactive_only | boolean | query |  |\npublic_only | boolean | query |  |\nprivate_only | boolean | query |  |\n\n### Response\n\nField | Type | Description\n----- | ---- | ----------- \nchannels | array Channel | / The list of active channels"
+					},
+					"response": [
+						{
+							"name": "/v1/balance/blockchain",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{http}}://{{url}}:{{port}}/v1/balance/blockchain",
+									"protocol": "{{http}}",
+									"host": [
+										"{{url}}"
+									],
+									"port": "{{port}}",
+									"path": [
+										"v1",
+										"balance",
+										"blockchain"
+									]
+								}
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": "plain",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "text/plain; charset=utf-8"
+								},
+								{
+									"key": "X-Content-Type-Options",
+									"value": "nosniff"
+								},
+								{
+									"key": "Date",
+									"value": "Mon, 19 Nov 2018 03:53:40 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "19"
+								}
+							],
+							"cookie": [],
+							"body": "{ \n    \"total_balance\": <string>, \n    \"confirmed_balance\": <string>, \n    \"unconfirmed_balance\": <string>, \n}"
+						},
+						{
+							"name": "/v1/channels",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Grpc-Metadata-macaroon",
+										"type": "text",
+										"value": "macaroon"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{http}}://{{url}}:{{port}}/v1/channels",
+									"protocol": "{{http}}",
+									"host": [
+										"{{url}}"
+									],
+									"port": "{{port}}",
+									"path": [
+										"v1",
+										"channels"
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": "{ \n    \"channels\": <array Channel>, \n}"
+						},
+						{
+							"name": "/v1/balance/channels",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Grpc-Metadata-macaroon",
+										"type": "text",
+										"value": "macaroon"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{http}}://{{url}}:{{port}}/v1/balance/channels",
+									"protocol": "{{http}}",
+									"host": [
+										"{{url}}"
+									],
+									"port": "{{port}}",
+									"path": [
+										"v1",
+										"balance",
+										"channels"
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": "{ \n    \"balance\": <string>, \n    \"pending_open_balance\": <string>, \n}"
+						}
+					]
+				},
+				{
+					"name": "/v1/channels",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Grpc-Metadata-macaroon",
+								"type": "text",
+								"value": "macaroon"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{http}}://{{url}}:{{port}}/v1/channels",
+							"protocol": "{{http}}",
+							"host": [
+								"{{url}}"
+							],
+							"port": "{{port}}",
+							"path": [
+								"v1",
+								"channels"
+							]
+						},
+						"description": "### POST /v1/channels\n* OpenChannelSync is a synchronous version of the OpenChannel RPC call. This call is meant to be consumed by clients to the REST proxy. As with all other sync calls, all byte slices are intended to be populated as hex encoded strings.\n\nField | Type | Placement | Description\n----- | ---- | --------- | ----------- \nnode_pubkey | byte | body | / The pubkey of the node to open a channel with\nnode_pubkey_string | string | body | / The hex encoded pubkey of the node to open a channel with\nlocal_funding_amount | string | body | / The number of satoshis the wallet should commit to the channel\npush_sat | string | body | / The number of satoshis to push to the remote side as part of the initial commitment state\ntarget_conf | int32 | body | / The target number of blocks that the funding transaction should be confirmed by.\nsat_per_byte | string | body | / A manual fee rate set in sat/byte that should be used when crafting the funding transaction.\nprivate | boolean | body | / Whether this channel should be private, not announced to the greater network.\nmin_htlc_msat | string | body | / The minimum value in millisatoshi we will require for incoming HTLCs on the channel.\nremote_csv_delay | int64 | body | / The delay we require on the remote's commitment transaction. If this is not set, it will be scaled automatically with the channel size.\nmin_confs | int32 | body | / The minimum number of confirmations each one of your outputs used for the funding transaction must satisfy.\nspend_unconfirmed | boolean | body | / Whether unconfirmed outputs should be used as inputs for the funding transaction.\n\n### Response \n\n\nField | Type | Description\n----- | ---- | ----------- \nfunding_txid_bytes | byte | / Txid of the funding transaction \nfunding_txid_str | string | / Hex-encoded string representing the funding transaction \noutput_index | int64 | / The index of the output of the funding transaction"
+					},
+					"response": [
+						{
+							"name": "/v1/balance/blockchain",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{http}}://{{url}}:{{port}}/v1/balance/blockchain",
+									"protocol": "{{http}}",
+									"host": [
+										"{{url}}"
+									],
+									"port": "{{port}}",
+									"path": [
+										"v1",
+										"balance",
+										"blockchain"
+									]
+								}
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": "plain",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "text/plain; charset=utf-8"
+								},
+								{
+									"key": "X-Content-Type-Options",
+									"value": "nosniff"
+								},
+								{
+									"key": "Date",
+									"value": "Mon, 19 Nov 2018 03:53:40 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "19"
+								}
+							],
+							"cookie": [],
+							"body": "{ \n    \"total_balance\": <string>, \n    \"confirmed_balance\": <string>, \n    \"unconfirmed_balance\": <string>, \n}"
+						},
+						{
+							"name": "/v1/balance/channels",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Grpc-Metadata-macaroon",
+										"type": "text",
+										"value": "macaroon"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{http}}://{{url}}:{{port}}/v1/balance/channels",
+									"protocol": "{{http}}",
+									"host": [
+										"{{url}}"
+									],
+									"port": "{{port}}",
+									"path": [
+										"v1",
+										"balance",
+										"channels"
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": "{ \n    \"balance\": <string>, \n    \"pending_open_balance\": <string>, \n}"
+						},
+						{
+							"name": "/v1/channels",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Grpc-Metadata-macaroon",
+										"type": "text",
+										"value": "macaroon"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{http}}://{{url}}:{{port}}/v1/channels",
+									"protocol": "{{http}}",
+									"host": [
+										"{{url}}"
+									],
+									"port": "{{port}}",
+									"path": [
+										"v1",
+										"channels"
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": "{ \n    \"channels\": <array Channel>, \n}"
+						}
+					]
+				},
+				{
+					"name": "/v1/channels",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Grpc-Metadata-macaroon",
+								"type": "text",
+								"value": "macaroon"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{http}}://{{url}}:{{port}}/v1/channels/:channel_point.funding_txid_str/:channel_point.output_index",
+							"protocol": "{{http}}",
+							"host": [
+								"{{url}}"
+							],
+							"port": "{{port}}",
+							"path": [
+								"v1",
+								"channels",
+								":channel_point.funding_txid_str",
+								":channel_point.output_index"
+							],
+							"variable": [
+								{
+									"key": "channel_point",
+									"value": ""
+								},
+								{
+									"key": "channel_point",
+									"value": ""
+								}
+							]
+						},
+						"description": "AbandonChannel removes all channel state from the database except for a close summary. This method can be used to get rid of permanently unusable channels due to bugs fixed in newer versions of lnd. Only available when in debug builds of lnd.\n\n\nField | Type | Placement | Description\n----- | ---- | --------- | ----------- \nchannel_point.funding_txid_str | string | path |  |\nchannel_point.output_index | int64 | path |  |\n\n### Response \n\nThis response has no parameters."
+					},
+					"response": [
+						{
+							"name": "/v1/channels",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Grpc-Metadata-macaroon",
+										"type": "text",
+										"value": "macaroon"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{http}}://{{url}}:{{port}}/v1/channels",
+									"protocol": "{{http}}",
+									"host": [
+										"{{url}}"
+									],
+									"port": "{{port}}",
+									"path": [
+										"v1",
+										"channels"
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": "{ \n    \"channels\": <array Channel>, \n}"
+						},
+						{
+							"name": "/v1/balance/blockchain",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{http}}://{{url}}:{{port}}/v1/balance/blockchain",
+									"protocol": "{{http}}",
+									"host": [
+										"{{url}}"
+									],
+									"port": "{{port}}",
+									"path": [
+										"v1",
+										"balance",
+										"blockchain"
+									]
+								}
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": "plain",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "text/plain; charset=utf-8"
+								},
+								{
+									"key": "X-Content-Type-Options",
+									"value": "nosniff"
+								},
+								{
+									"key": "Date",
+									"value": "Mon, 19 Nov 2018 03:53:40 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "19"
+								}
+							],
+							"cookie": [],
+							"body": "{ \n    \"total_balance\": <string>, \n    \"confirmed_balance\": <string>, \n    \"unconfirmed_balance\": <string>, \n}"
+						},
+						{
+							"name": "/v1/balance/channels",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Grpc-Metadata-macaroon",
+										"type": "text",
+										"value": "macaroon"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{http}}://{{url}}:{{port}}/v1/balance/channels",
+									"protocol": "{{http}}",
+									"host": [
+										"{{url}}"
+									],
+									"port": "{{port}}",
+									"path": [
+										"v1",
+										"balance",
+										"channels"
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": "{ \n    \"balance\": <string>, \n    \"pending_open_balance\": <string>, \n}"
+						}
+					]
+				},
+				{
+					"name": "/v1/channels/closed",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Grpc-Metadata-macaroon",
+								"type": "text",
+								"value": "macaroon"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{http}}://{{url}}:{{port}}/v1/channels/closed",
+							"protocol": "{{http}}",
+							"host": [
+								"{{url}}"
+							],
+							"port": "{{port}}",
+							"path": [
+								"v1",
+								"channels",
+								"closed"
+							]
+						},
+						"description": "ClosedChannels returns a description of all the closed channels that  this node was a participant in.\n\nField | Type | Placement | Description\n----- | ---- | --------- | ----------- \ncooperative | boolean | query |  |\nlocal_force | boolean | query |  |\nremote_force | boolean | query |  |\nbreach | boolean | query |  |\nfunding_canceled | boolean | query |  |\nabandoned | boolean | query |  |\n\n### Response \n\nField | Type | Description\n----- | ---- | ----------- \nchannels | array ChannelCloseSummary |  |"
+					},
+					"response": [
+						{
+							"name": "/v1/balance/blockchain",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{http}}://{{url}}:{{port}}/v1/balance/blockchain",
+									"protocol": "{{http}}",
+									"host": [
+										"{{url}}"
+									],
+									"port": "{{port}}",
+									"path": [
+										"v1",
+										"balance",
+										"blockchain"
+									]
+								}
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": "plain",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "text/plain; charset=utf-8"
+								},
+								{
+									"key": "X-Content-Type-Options",
+									"value": "nosniff"
+								},
+								{
+									"key": "Date",
+									"value": "Mon, 19 Nov 2018 03:53:40 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "19"
+								}
+							],
+							"cookie": [],
+							"body": "{ \n    \"total_balance\": <string>, \n    \"confirmed_balance\": <string>, \n    \"unconfirmed_balance\": <string>, \n}"
+						},
+						{
+							"name": "/v1/channels",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Grpc-Metadata-macaroon",
+										"type": "text",
+										"value": "macaroon"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{http}}://{{url}}:{{port}}/v1/channels",
+									"protocol": "{{http}}",
+									"host": [
+										"{{url}}"
+									],
+									"port": "{{port}}",
+									"path": [
+										"v1",
+										"channels"
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": "{ \n    \"channels\": <array Channel>, \n}"
+						},
+						{
+							"name": "/v1/balance/channels",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Grpc-Metadata-macaroon",
+										"type": "text",
+										"value": "macaroon"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{http}}://{{url}}:{{port}}/v1/balance/channels",
+									"protocol": "{{http}}",
+									"host": [
+										"{{url}}"
+									],
+									"port": "{{port}}",
+									"path": [
+										"v1",
+										"balance",
+										"channels"
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": "{ \n    \"balance\": <string>, \n    \"pending_open_balance\": <string>, \n}"
+						}
+					]
+				},
+				{
+					"name": "/v1/channels/pending",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Grpc-Metadata-macaroon",
+								"type": "text",
+								"value": "macaroon"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{http}}://{{url}}:{{port}}/v1/channels/pending",
+							"protocol": "{{http}}",
+							"host": [
+								"{{url}}"
+							],
+							"port": "{{port}}",
+							"path": [
+								"v1",
+								"channels",
+								"pending"
+							]
+						},
+						"description": "### GET /v1/channels/pending\nPendingChannels returns a list of all the channels that are currently considered \"pending\". A channel is pending if it has finished the funding workflow and is waiting for confirmations for the funding txn, or is in the process of closure, either initiated cooperatively or non-cooperatively.\n\nThis request has no parameters.\n\n### Response \n\nField | Type | Description\n----- | ---- | ----------- \ntotal_limbo_balance | string | / The balance in satoshis encumbered in pending channels \npending_open_channels | array [PendingChannelsResponsePendingOpenChannel] | / Channels pending opening \npending_closing_channels | array [PendingChannelsResponseClosedChannel] | / Channels pending closing \npending_force_closing_channels | array [PendingChannelsResponseForceClosedChannel] | / Channels pending force closing \nwaiting_close_channels | array [PendingChannelsResponseWaitingCloseChannel] | / Channels waiting for closing tx to confirm"
+					},
+					"response": [
+						{
+							"name": "/v1/channels",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Grpc-Metadata-macaroon",
+										"type": "text",
+										"value": "macaroon"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{http}}://{{url}}:{{port}}/v1/channels",
+									"protocol": "{{http}}",
+									"host": [
+										"{{url}}"
+									],
+									"port": "{{port}}",
+									"path": [
+										"v1",
+										"channels"
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": "{ \n    \"channels\": <array Channel>, \n}"
+						},
+						{
+							"name": "/v1/balance/blockchain",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{http}}://{{url}}:{{port}}/v1/balance/blockchain",
+									"protocol": "{{http}}",
+									"host": [
+										"{{url}}"
+									],
+									"port": "{{port}}",
+									"path": [
+										"v1",
+										"balance",
+										"blockchain"
+									]
+								}
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": "plain",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "text/plain; charset=utf-8"
+								},
+								{
+									"key": "X-Content-Type-Options",
+									"value": "nosniff"
+								},
+								{
+									"key": "Date",
+									"value": "Mon, 19 Nov 2018 03:53:40 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "19"
+								}
+							],
+							"cookie": [],
+							"body": "{ \n    \"total_balance\": <string>, \n    \"confirmed_balance\": <string>, \n    \"unconfirmed_balance\": <string>, \n}"
+						},
+						{
+							"name": "/v1/balance/channels",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Grpc-Metadata-macaroon",
+										"type": "text",
+										"value": "macaroon"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{http}}://{{url}}:{{port}}/v1/balance/channels",
+									"protocol": "{{http}}",
+									"host": [
+										"{{url}}"
+									],
+									"port": "{{port}}",
+									"path": [
+										"v1",
+										"balance",
+										"channels"
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": "{ \n    \"balance\": <string>, \n    \"pending_open_balance\": <string>, \n}"
+						}
+					]
+				},
+				{
+					"name": "/v1/channels/transactions",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Grpc-Metadata-macaroon",
+								"type": "text",
+								"value": "macaroon"
+							},
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{ \n\t\"dest\": <byte>, \n    \"dest_string\": <string>, \n    \"amt\": <string>, \n    \"payment_hash\": <byte>, \n    \"payment_hash_string\": <string>, \n    \"payment_request\": <string>, \n    \"final_cltv_delta\": <int32>, \n    \"fee_limit\": <FeeLimit>, \n}"
+						},
+						"url": {
+							"raw": "{{http}}://{{url}}:{{port}}/v1/channels/transactions",
+							"protocol": "{{http}}",
+							"host": [
+								"{{url}}"
+							],
+							"port": "{{port}}",
+							"path": [
+								"v1",
+								"channels",
+								"transactions"
+							]
+						},
+						"description": "### POST /v1/channels/transactions\n* SendPaymentSync is the synchronous non-streaming version of SendPayment. This RPC is intended to be consumed by clients of the REST proxy. Additionally, this RPC expects the destination's public key and the payment hash (if any) to be encoded as hex strings.\n\nField | Type | Placement | Description\n----- | ---- | --------- | ----------- \ndest | byte | body | / The identity pubkey of the payment recipient\ndest_string | string | body | / The hex-encoded identity pubkey of the payment recipient\namt | string | body | / Number of satoshis to send.\npayment_hash | byte | body | / The hash to use within the payment's HTLC\npayment_hash_string | string | body | / The hex-encoded hash to use within the payment's HTLC\npayment_request | string | body | * A bare-bones invoice for a payment within the Lightning Network.  With the details of the invoice, the sender has all the data necessary to send a payment to the recipient.\nfinal_cltv_delta | int32 | body | * The CLTV delta from the current height that should be used to set the timelock for the final hop.\nfee_limit | FeeLimit | body | * The maximum number of satoshis that will be paid as a fee of the payment. This value can be represented either as a percentage of the amount being sent, or as a fixed amount of the maximum fee the user is willing the pay to send the payment.\n\n### Response \n\nField | Type | Description\n----- | ---- | ----------- \npayment_error | string |  |\npayment_preimage | byte |  |\npayment_route | Route |  |"
+					},
+					"response": [
+						{
+							"name": "/v1/balance/blockchain",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{http}}://{{url}}:{{port}}/v1/balance/blockchain",
+									"protocol": "{{http}}",
+									"host": [
+										"{{url}}"
+									],
+									"port": "{{port}}",
+									"path": [
+										"v1",
+										"balance",
+										"blockchain"
+									]
+								}
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": "plain",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "text/plain; charset=utf-8"
+								},
+								{
+									"key": "X-Content-Type-Options",
+									"value": "nosniff"
+								},
+								{
+									"key": "Date",
+									"value": "Mon, 19 Nov 2018 03:53:40 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "19"
+								}
+							],
+							"cookie": [],
+							"body": "{ \n    \"total_balance\": <string>, \n    \"confirmed_balance\": <string>, \n    \"unconfirmed_balance\": <string>, \n}"
+						},
+						{
+							"name": "/v1/balance/channels",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Grpc-Metadata-macaroon",
+										"type": "text",
+										"value": "macaroon"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{http}}://{{url}}:{{port}}/v1/balance/channels",
+									"protocol": "{{http}}",
+									"host": [
+										"{{url}}"
+									],
+									"port": "{{port}}",
+									"path": [
+										"v1",
+										"balance",
+										"channels"
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": "{ \n    \"balance\": <string>, \n    \"pending_open_balance\": <string>, \n}"
+						},
+						{
+							"name": "/v1/channels",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Grpc-Metadata-macaroon",
+										"type": "text",
+										"value": "macaroon"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{http}}://{{url}}:{{port}}/v1/channels",
+									"protocol": "{{http}}",
+									"host": [
+										"{{url}}"
+									],
+									"port": "{{port}}",
+									"path": [
+										"v1",
+										"channels"
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": "{ \n    \"channels\": <array Channel>, \n}"
+						}
+					]
+				},
+				{
+					"name": "/v1/channels/transactions/route",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Grpc-Metadata-macaroon",
+								"type": "text",
+								"value": "macaroon"
+							},
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{ \n    \"payment_error\": <string>, \n    \"payment_preimage\": <byte>, \n    \"payment_route\": <Route>, \n}"
+						},
+						"url": {
+							"raw": "{{http}}://{{url}}:{{port}}/v1/channels/transactions/route",
+							"protocol": "{{http}}",
+							"host": [
+								"{{url}}"
+							],
+							"port": "{{port}}",
+							"path": [
+								"v1",
+								"channels",
+								"transactions",
+								"route"
+							]
+						},
+						"description": "### POST /v1/channels/transactions/route\n* SendToRouteSync is a synchronous version of SendToRoute. It Will block until the payment either fails or succeeds.\n\nField | Type | Placement | Description\n----- | ---- | --------- | ----------- \npayment_hash | byte | body | / The payment hash to use for the HTLC.\npayment_hash_string | string | body | / An optional hex-encoded payment hash to be used for the HTLC.\nroutes | array Route | body | / The set of routes that should be used to attempt to complete the payment.\n\n### Response \n\nField | Type | Description\n----- | ---- | ----------- \npayment_error | string |   |\npayment_preimage | byte |   |\npayment_route | Route |   |"
+					},
+					"response": [
+						{
+							"name": "/v1/channels",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Grpc-Metadata-macaroon",
+										"type": "text",
+										"value": "macaroon"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{http}}://{{url}}:{{port}}/v1/channels",
+									"protocol": "{{http}}",
+									"host": [
+										"{{url}}"
+									],
+									"port": "{{port}}",
+									"path": [
+										"v1",
+										"channels"
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": "{ \n    \"channels\": <array Channel>, \n}"
+						},
+						{
+							"name": "/v1/balance/blockchain",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{http}}://{{url}}:{{port}}/v1/balance/blockchain",
+									"protocol": "{{http}}",
+									"host": [
+										"{{url}}"
+									],
+									"port": "{{port}}",
+									"path": [
+										"v1",
+										"balance",
+										"blockchain"
+									]
+								}
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": "plain",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "text/plain; charset=utf-8"
+								},
+								{
+									"key": "X-Content-Type-Options",
+									"value": "nosniff"
+								},
+								{
+									"key": "Date",
+									"value": "Mon, 19 Nov 2018 03:53:40 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "19"
+								}
+							],
+							"cookie": [],
+							"body": "{ \n    \"total_balance\": <string>, \n    \"confirmed_balance\": <string>, \n    \"unconfirmed_balance\": <string>, \n}"
+						},
+						{
+							"name": "/v1/balance/channels",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Grpc-Metadata-macaroon",
+										"type": "text",
+										"value": "macaroon"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{http}}://{{url}}:{{port}}/v1/balance/channels",
+									"protocol": "{{http}}",
+									"host": [
+										"{{url}}"
+									],
+									"port": "{{port}}",
+									"path": [
+										"v1",
+										"balance",
+										"channels"
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": "{ \n    \"balance\": <string>, \n    \"pending_open_balance\": <string>, \n}"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Miscellaneous",
+			"item": [
+				{
+					"name": "/v1/changepassword",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Grpc-Metadata-macaroon",
+								"type": "text",
+								"value": "macaroon"
+							},
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"current_password\": <byte>,\n  \"new_password\": <byte>\n}"
+						},
+						"url": {
+							"raw": "{{http}}://{{url}}:{{port}}/v1/changepassword",
+							"protocol": "{{http}}",
+							"host": [
+								"{{url}}"
+							],
+							"port": "{{port}}",
+							"path": [
+								"v1",
+								"changepassword"
+							]
+						},
+						"description": "ChangePassword changes the password of the encrypted wallet. This will automatically unlock the wallet database if successful."
+					},
+					"response": [
+						{
+							"name": "/v1/balance/channels",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Grpc-Metadata-macaroon",
+										"type": "text",
+										"value": "macaroon"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{http}}://{{url}}:{{port}}/v1/balance/channels",
+									"protocol": "{{http}}",
+									"host": [
+										"{{url}}"
+									],
+									"port": "{{port}}",
+									"path": [
+										"v1",
+										"balance",
+										"channels"
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": "{ \n    \"balance\": <string>, \n    \"pending_open_balance\": <string>, \n}"
+						},
+						{
+							"name": "/v1/balance/blockchain",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{http}}://{{url}}:{{port}}/v1/balance/blockchain",
+									"protocol": "{{http}}",
+									"host": [
+										"{{url}}"
+									],
+									"port": "{{port}}",
+									"path": [
+										"v1",
+										"balance",
+										"blockchain"
+									]
+								}
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": "plain",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "text/plain; charset=utf-8"
+								},
+								{
+									"key": "X-Content-Type-Options",
+									"value": "nosniff"
+								},
+								{
+									"key": "Date",
+									"value": "Mon, 19 Nov 2018 03:53:40 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "19"
+								}
+							],
+							"cookie": [],
+							"body": "{ \n    \"total_balance\": <string>, \n    \"confirmed_balance\": <string>, \n    \"unconfirmed_balance\": <string>, \n}"
+						}
+					]
+				},
+				{
+					"name": "/v1/getinfo",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Grpc-Metadata-macaroon",
+								"type": "text",
+								"value": "macaroon"
+							},
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{http}}://{{url}}:{{port}}/v1/getinfo",
+							"protocol": "{{http}}",
+							"host": [
+								"{{url}}"
+							],
+							"port": "{{port}}",
+							"path": [
+								"v1",
+								"getinfo"
+							]
+						},
+						"description": "### GET /v1/getinfo\nGetInfo returns general information concerning the lightning node including it's identity pubkey, alias, the chains it is connected to, and information concerning the number of open+pending channels.\n\nThis request has no parameters.\n\n### Response \n\nField | Type | Description\n----- | ---- | ----------- \nidentity_pubkey | string | / The identity pubkey of the current node. \nalias | string | / If applicable, the alias of the current node, e.g. \"bob\" \nnum_pending_channels | int64 | / Number of pending channels \nnum_active_channels | int64 | / Number of active channels \nnum_peers | int64 | / Number of peers \nblock_height | int64 | / The node's current view of the height of the best block \nblock_hash | string | / The node's current view of the hash of the best block \nsynced_to_chain | boolean | / Whether the wallet's view is synced to the main chain \ntestnet | boolean | / Whether the current node is connected to testnet \nchains | array string | / A list of active chains the node is connected to \nuris | array string | / The URIs of the current node. \nbest_header_timestamp | string | / Timestamp of the block best known to the wallet \nversion | string | / The version of the LND software that the node is running."
+					},
+					"response": [
+						{
+							"name": "/v1/balance/channels",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Grpc-Metadata-macaroon",
+										"type": "text",
+										"value": "macaroon"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{http}}://{{url}}:{{port}}/v1/balance/channels",
+									"protocol": "{{http}}",
+									"host": [
+										"{{url}}"
+									],
+									"port": "{{port}}",
+									"path": [
+										"v1",
+										"balance",
+										"channels"
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": "{ \n    \"balance\": <string>, \n    \"pending_open_balance\": <string>, \n}"
+						},
+						{
+							"name": "/v1/balance/blockchain",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{http}}://{{url}}:{{port}}/v1/balance/blockchain",
+									"protocol": "{{http}}",
+									"host": [
+										"{{url}}"
+									],
+									"port": "{{port}}",
+									"path": [
+										"v1",
+										"balance",
+										"blockchain"
+									]
+								}
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": "plain",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "text/plain; charset=utf-8"
+								},
+								{
+									"key": "X-Content-Type-Options",
+									"value": "nosniff"
+								},
+								{
+									"key": "Date",
+									"value": "Mon, 19 Nov 2018 03:53:40 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "19"
+								}
+							],
+							"cookie": [],
+							"body": "{ \n    \"total_balance\": <string>, \n    \"confirmed_balance\": <string>, \n    \"unconfirmed_balance\": <string>, \n}"
+						}
+					]
+				},
+				{
+					"name": "/v1/chanpolicy",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Grpc-Metadata-macaroon",
+								"type": "text",
+								"value": "macaroon"
+							},
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"global\":<boolean>,\n  \"chan_point\":<ChannelPoint>,\n  \"base_fee_msat\":<string>,\n  \"fee_rate\":<double>,\n  \"time_lock_delta\":<int64>,\n}"
+						},
+						"url": {
+							"raw": "{{http}}://{{url}}:{{port}}/v1/chanpolicy",
+							"protocol": "{{http}}",
+							"host": [
+								"{{url}}"
+							],
+							"port": "{{port}}",
+							"path": [
+								"v1",
+								"chanpolicy"
+							]
+						},
+						"description": "### POST /v1/chanpolicy\nUpdateChannelPolicy allows the caller to update the fee schedule and channel policies for all channels globally, or a particular channel.\n\nField | Type | Placement | Description\n----- | ---- | --------- | ----------- \nglobal | boolean | body | / If set, then this update applies to all currently active channels.\nchan_point | ChannelPoint | body | / If set, this update will target a specific channel.\nbase_fee_msat | string | body | / The base fee charged regardless of the number of milli-satoshis sent.\nfee_rate | double | body | / The effective fee rate in milli-satoshis. The precision of this value goes up to 6 decimal places, so 1e-6.\ntime_lock_delta | int64 | body | / The required timelock delta for HTLCs forwarded over the channel.\n\n### Response \n\nThis response has no parameters."
+					},
+					"response": [
+						{
+							"name": "/v1/balance/blockchain",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{http}}://{{url}}:{{port}}/v1/balance/blockchain",
+									"protocol": "{{http}}",
+									"host": [
+										"{{url}}"
+									],
+									"port": "{{port}}",
+									"path": [
+										"v1",
+										"balance",
+										"blockchain"
+									]
+								}
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": "plain",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "text/plain; charset=utf-8"
+								},
+								{
+									"key": "X-Content-Type-Options",
+									"value": "nosniff"
+								},
+								{
+									"key": "Date",
+									"value": "Mon, 19 Nov 2018 03:53:40 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "19"
+								}
+							],
+							"cookie": [],
+							"body": "{ \n    \"total_balance\": <string>, \n    \"confirmed_balance\": <string>, \n    \"unconfirmed_balance\": <string>, \n}"
+						},
+						{
+							"name": "/v1/balance/channels",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Grpc-Metadata-macaroon",
+										"type": "text",
+										"value": "macaroon"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{http}}://{{url}}:{{port}}/v1/balance/channels",
+									"protocol": "{{http}}",
+									"host": [
+										"{{url}}"
+									],
+									"port": "{{port}}",
+									"path": [
+										"v1",
+										"balance",
+										"channels"
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": "{ \n    \"balance\": <string>, \n    \"pending_open_balance\": <string>, \n}"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Graph",
+			"item": [
+				{
+					"name": "/v1/graph",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Grpc-Metadata-macaroon",
+								"type": "text",
+								"value": "macaroon"
+							},
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{http}}://{{url}}:{{port}}/v1/graph",
+							"protocol": "{{http}}",
+							"host": [
+								"{{url}}"
+							],
+							"port": "{{port}}",
+							"path": [
+								"v1",
+								"graph"
+							]
+						},
+						"description": "### GET /v1/graph\nDescribeGraph returns a description of the latest graph state from the point of view of the node. The graph information is partitioned into two components: all the nodes/vertexes, and all the edges that connect the vertexes themselves.  As this is a directed graph, the edges also contain the node directional specific routing policy which includes: the time lock delta, fee information, etc.\n\nField | Type | Placement | Description\n----- | ---- | --------- | ----------- \ninclude_unannounced | boolean | query | * Whether unannounced channels are included in the response or not. If set, unannounced channels are included. Unannounced channels are both private channels, and public channels that are not yet announced to the network.\n\n### Response \n\nField | Type | Description\n----- | ---- | ----------- \nnodes | array LightningNode | / The list of `LightningNode`s in this channel graph \nedges | array ChannelEdge | / The list of `ChannelEdge`s in this channel graph"
+					},
+					"response": [
+						{
+							"name": "/v1/balance/channels",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Grpc-Metadata-macaroon",
+										"type": "text",
+										"value": "macaroon"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{http}}://{{url}}:{{port}}/v1/balance/channels",
+									"protocol": "{{http}}",
+									"host": [
+										"{{url}}"
+									],
+									"port": "{{port}}",
+									"path": [
+										"v1",
+										"balance",
+										"channels"
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": "{ \n    \"balance\": <string>, \n    \"pending_open_balance\": <string>, \n}"
+						},
+						{
+							"name": "/v1/balance/blockchain",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{http}}://{{url}}:{{port}}/v1/balance/blockchain",
+									"protocol": "{{http}}",
+									"host": [
+										"{{url}}"
+									],
+									"port": "{{port}}",
+									"path": [
+										"v1",
+										"balance",
+										"blockchain"
+									]
+								}
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": "plain",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "text/plain; charset=utf-8"
+								},
+								{
+									"key": "X-Content-Type-Options",
+									"value": "nosniff"
+								},
+								{
+									"key": "Date",
+									"value": "Mon, 19 Nov 2018 03:53:40 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "19"
+								}
+							],
+							"cookie": [],
+							"body": "{ \n    \"total_balance\": <string>, \n    \"confirmed_balance\": <string>, \n    \"unconfirmed_balance\": <string>, \n}"
+						}
+					]
+				},
+				{
+					"name": "/v1/graph/edge",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Grpc-Metadata-macaroon",
+								"type": "text",
+								"value": "macaroon"
+							},
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{ \n    \"nodes\": <array LightningNode>, \n    \"edges\": <array ChannelEdge>, \n}"
+						},
+						"url": {
+							"raw": "{{http}}://{{url}}:{{port}}/v1/graph/edge/:chan_id",
+							"protocol": "{{http}}",
+							"host": [
+								"{{url}}"
+							],
+							"port": "{{port}}",
+							"path": [
+								"v1",
+								"graph",
+								"edge",
+								":chan_id"
+							],
+							"variable": [
+								{
+									"key": "chan_id",
+									"value": ""
+								}
+							]
+						},
+						"description": "### GET /v1/graph/edge/{chan_id}\nGetChanInfo returns the latest authenticated network announcement for the given channel identified by its channel ID: an 8-byte integer which uniquely identifies the location of transaction's funding output within the blockchain.\n\nField | Type | Placement | Description\n----- | ---- | --------- | ----------- \nchan_id | string | path | \n\n### Response \n\nField | Type | Description\n----- | ---- | ----------- \nchannel_id | string | * The unique channel ID for the channel. The first 3 bytes are the block height, the next 3 the index within the block, and the last 2 bytes are the output index for the channel. \nchan_point | string |  |\nlast_update | int64 |  |\nnode1_pub | string |  |\nnode2_pub | string |  |\ncapacity | string |  |\nnode1_policy | RoutingPolicy |  |\nnode2_policy | RoutingPolicy |  |"
+					},
+					"response": [
+						{
+							"name": "/v1/balance/blockchain",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{http}}://{{url}}:{{port}}/v1/balance/blockchain",
+									"protocol": "{{http}}",
+									"host": [
+										"{{url}}"
+									],
+									"port": "{{port}}",
+									"path": [
+										"v1",
+										"balance",
+										"blockchain"
+									]
+								}
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": "plain",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "text/plain; charset=utf-8"
+								},
+								{
+									"key": "X-Content-Type-Options",
+									"value": "nosniff"
+								},
+								{
+									"key": "Date",
+									"value": "Mon, 19 Nov 2018 03:53:40 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "19"
+								}
+							],
+							"cookie": [],
+							"body": "{ \n    \"total_balance\": <string>, \n    \"confirmed_balance\": <string>, \n    \"unconfirmed_balance\": <string>, \n}"
+						},
+						{
+							"name": "/v1/balance/channels",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Grpc-Metadata-macaroon",
+										"type": "text",
+										"value": "macaroon"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{http}}://{{url}}:{{port}}/v1/balance/channels",
+									"protocol": "{{http}}",
+									"host": [
+										"{{url}}"
+									],
+									"port": "{{port}}",
+									"path": [
+										"v1",
+										"balance",
+										"channels"
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": "{ \n    \"balance\": <string>, \n    \"pending_open_balance\": <string>, \n}"
+						}
+					]
+				},
+				{
+					"name": "/v1/graph/info",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Grpc-Metadata-macaroon",
+								"type": "text",
+								"value": "macaroon"
+							},
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{ \n    \"nodes\": <array LightningNode>, \n    \"edges\": <array ChannelEdge>, \n}"
+						},
+						"url": {
+							"raw": "{{http}}://{{url}}:{{port}}/v1/graph/info",
+							"protocol": "{{http}}",
+							"host": [
+								"{{url}}"
+							],
+							"port": "{{port}}",
+							"path": [
+								"v1",
+								"graph",
+								"info"
+							]
+						},
+						"description": "### GET /v1/graph/info\nGetNetworkInfo returns some basic stats about the known channel graph from the point of view of the node.\n\nThis request has no parameters.\n\n### Response \n\nField | Type | Description\n----- | ---- | ----------- \ngraph_diameter | int64 |  \navg_out_degree | double |  \nmax_out_degree | int64 |  \nnum_nodes | int64 |  \nnum_channels | int64 |  \ntotal_network_capacity | string |  \navg_channel_size | double |  \nmin_channel_size | string |  \nmax_channel_size | string |"
+					},
+					"response": [
+						{
+							"name": "/v1/balance/channels",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Grpc-Metadata-macaroon",
+										"type": "text",
+										"value": "macaroon"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{http}}://{{url}}:{{port}}/v1/balance/channels",
+									"protocol": "{{http}}",
+									"host": [
+										"{{url}}"
+									],
+									"port": "{{port}}",
+									"path": [
+										"v1",
+										"balance",
+										"channels"
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": "{ \n    \"balance\": <string>, \n    \"pending_open_balance\": <string>, \n}"
+						},
+						{
+							"name": "/v1/balance/blockchain",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{http}}://{{url}}:{{port}}/v1/balance/blockchain",
+									"protocol": "{{http}}",
+									"host": [
+										"{{url}}"
+									],
+									"port": "{{port}}",
+									"path": [
+										"v1",
+										"balance",
+										"blockchain"
+									]
+								}
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": "plain",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "text/plain; charset=utf-8"
+								},
+								{
+									"key": "X-Content-Type-Options",
+									"value": "nosniff"
+								},
+								{
+									"key": "Date",
+									"value": "Mon, 19 Nov 2018 03:53:40 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "19"
+								}
+							],
+							"cookie": [],
+							"body": "{ \n    \"total_balance\": <string>, \n    \"confirmed_balance\": <string>, \n    \"unconfirmed_balance\": <string>, \n}"
+						}
+					]
+				},
+				{
+					"name": "/v1/graph/node/{pubkey}",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Grpc-Metadata-macaroon",
+								"type": "text",
+								"value": "macaroon"
+							},
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{ \n    \"nodes\": <array LightningNode>, \n    \"edges\": <array ChannelEdge>, \n}"
+						},
+						"url": {
+							"raw": "{{http}}://{{url}}:{{port}}/v1/graph/info",
+							"protocol": "{{http}}",
+							"host": [
+								"{{url}}"
+							],
+							"port": "{{port}}",
+							"path": [
+								"v1",
+								"graph",
+								"info"
+							]
+						},
+						"description": "### GET /v1/graph/node/{pub_key}\nGetNodeInfo returns the latest advertised, aggregated, and authenticated channel information for the specified node identified by its public key.\n\nField | Type | Placement | Description\n----- | ---- | --------- | ----------- \npub_key | string | path | \n\n### Response \n\nField | Type | Description\n----- | ---- | ----------- \nnode | LightningNode | * An individual vertex/node within the channel graph. A node is connected to other nodes by one or more channel edges emanating from it. As the graph is directed, a node will also have an incoming edge attached to it for each outgoing edge. \nnum_channels | int64 |  |\ntotal_capacity | string |  |"
+					},
+					"response": [
+						{
+							"name": "/v1/balance/blockchain",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{http}}://{{url}}:{{port}}/v1/balance/blockchain",
+									"protocol": "{{http}}",
+									"host": [
+										"{{url}}"
+									],
+									"port": "{{port}}",
+									"path": [
+										"v1",
+										"balance",
+										"blockchain"
+									]
+								}
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": "plain",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "text/plain; charset=utf-8"
+								},
+								{
+									"key": "X-Content-Type-Options",
+									"value": "nosniff"
+								},
+								{
+									"key": "Date",
+									"value": "Mon, 19 Nov 2018 03:53:40 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "19"
+								}
+							],
+							"cookie": [],
+							"body": "{ \n    \"total_balance\": <string>, \n    \"confirmed_balance\": <string>, \n    \"unconfirmed_balance\": <string>, \n}"
+						},
+						{
+							"name": "/v1/balance/channels",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Grpc-Metadata-macaroon",
+										"type": "text",
+										"value": "macaroon"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{http}}://{{url}}:{{port}}/v1/balance/channels",
+									"protocol": "{{http}}",
+									"host": [
+										"{{url}}"
+									],
+									"port": "{{port}}",
+									"path": [
+										"v1",
+										"balance",
+										"channels"
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": "{ \n    \"balance\": <string>, \n    \"pending_open_balance\": <string>, \n}"
+						}
+					]
+				},
+				{
+					"name": "/v1/graph/routes/{pub_key}/{amount}",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Grpc-Metadata-macaroon",
+								"type": "text",
+								"value": "macaroon"
+							},
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{ \n    \"nodes\": <array LightningNode>, \n    \"edges\": <array ChannelEdge>, \n}"
+						},
+						"url": {
+							"raw": "{{http}}://{{url}}:{{port}}/v1/graph/routes/:pub_key/:amt",
+							"protocol": "{{http}}",
+							"host": [
+								"{{url}}"
+							],
+							"port": "{{port}}",
+							"path": [
+								"v1",
+								"graph",
+								"routes",
+								":pub_key",
+								":amt"
+							],
+							"variable": [
+								{
+									"key": "pub_key",
+									"value": ""
+								},
+								{
+									"key": "amt",
+									"value": ""
+								}
+							]
+						},
+						"description": "### GET /v1/graph/routes/{pub_key}/{amt}\nQueryRoutes attempts to query the daemon's Channel Router for a possible route to a target destination capable of carrying a specific amount of satoshis. The retuned route contains the full details required to craft and send an HTLC, also including the necessary information that should be present within the Sphinx packet encapsulated within the HTLC.\n\nField | Type | Placement | Description\n----- | ---- | --------- | ----------- \npub_key | string | path |  |\namt | string | path |  |\nnum_routes | int32 | query | / The max number of routes to return.\nfinal_cltv_delta | int32 | query | / An optional CLTV delta from the current height that should be used for the timelock of the final hop.\nfee_limit.fixed | string | query | / The fee limit expressed as a fixed amount of satoshis.\nfee_limit.percent | string | query | / The fee limit expressed as a percentage of the payment amount.\n\n### Response \n\nField | Type | Description\n----- | ---- | ----------- \nroutes | array Route |   |"
+					},
+					"response": [
+						{
+							"name": "/v1/balance/blockchain",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{http}}://{{url}}:{{port}}/v1/balance/blockchain",
+									"protocol": "{{http}}",
+									"host": [
+										"{{url}}"
+									],
+									"port": "{{port}}",
+									"path": [
+										"v1",
+										"balance",
+										"blockchain"
+									]
+								}
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": "plain",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "text/plain; charset=utf-8"
+								},
+								{
+									"key": "X-Content-Type-Options",
+									"value": "nosniff"
+								},
+								{
+									"key": "Date",
+									"value": "Mon, 19 Nov 2018 03:53:40 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "19"
+								}
+							],
+							"cookie": [],
+							"body": "{ \n    \"total_balance\": <string>, \n    \"confirmed_balance\": <string>, \n    \"unconfirmed_balance\": <string>, \n}"
+						},
+						{
+							"name": "/v1/balance/channels",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Grpc-Metadata-macaroon",
+										"type": "text",
+										"value": "macaroon"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{http}}://{{url}}:{{port}}/v1/balance/channels",
+									"protocol": "{{http}}",
+									"host": [
+										"{{url}}"
+									],
+									"port": "{{port}}",
+									"path": [
+										"v1",
+										"balance",
+										"channels"
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": "{ \n    \"balance\": <string>, \n    \"pending_open_balance\": <string>, \n}"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Wallet",
+			"item": [
+				{
+					"name": "/v1/initwallet",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Grpc-Metadata-macaroon",
+								"type": "text",
+								"value": "macaroon"
+							},
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"wallet_password\":<byte>,\n  \"cipher_seed_mnemonic\":<array string>,\n  \"aezeed_passphrase\":<byte>,\n  \"recovery_window\":<int32>\n}"
+						},
+						"url": {
+							"raw": "{{http}}://{{url}}:{{port}}/v1/initwallet",
+							"protocol": "{{http}}",
+							"host": [
+								"{{url}}"
+							],
+							"port": "{{port}}",
+							"path": [
+								"v1",
+								"initwallet"
+							]
+						},
+						"description": "### POST /v1/initwallet\n\n*  InitWallet is used when lnd is starting up for the first time to fully initialize the daemon and its internal wallet. At the very least a wallet password must be provided. This will be used to encrypt sensitive material on disk.\n\nField | Type | Placement | Description\n----- | ---- | --------- | ----------- \nwallet_password | byte | body | * wallet_password is the passphrase that should be used to encrypt the wallet. This MUST be at least 8 chars in length. After creation, this password is required to unlock the daemon.\ncipher_seed_mnemonic | array string | body | * cipher_seed_mnemonic is a 24-word mnemonic that encodes a prior aezeed cipher seed obtained by the user. This may have been generated by the GenSeed method, or be an existing seed.\naezeed_passphrase | byte | body | * aezeed_passphrase is an optional user provided passphrase that will be used to encrypt the generated aezeed cipher seed.\nrecovery_window | int32 | body | * recovery_window is an optional argument specifying the address lookahead when restoring a wallet seed. The recovery window applies to each invdividual branch of the BIP44 derivation paths. Supplying a recovery window of zero indicates that no addresses should be recovered, such after the first initialization of the wallet.\n\n### Response \n\nThis response has no parameters."
+					},
+					"response": [
+						{
+							"name": "/v1/balance/channels",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Grpc-Metadata-macaroon",
+										"type": "text",
+										"value": "macaroon"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{http}}://{{url}}:{{port}}/v1/balance/channels",
+									"protocol": "{{http}}",
+									"host": [
+										"{{url}}"
+									],
+									"port": "{{port}}",
+									"path": [
+										"v1",
+										"balance",
+										"channels"
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": "{ \n    \"balance\": <string>, \n    \"pending_open_balance\": <string>, \n}"
+						},
+						{
+							"name": "/v1/balance/blockchain",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{http}}://{{url}}:{{port}}/v1/balance/blockchain",
+									"protocol": "{{http}}",
+									"host": [
+										"{{url}}"
+									],
+									"port": "{{port}}",
+									"path": [
+										"v1",
+										"balance",
+										"blockchain"
+									]
+								}
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": "plain",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "text/plain; charset=utf-8"
+								},
+								{
+									"key": "X-Content-Type-Options",
+									"value": "nosniff"
+								},
+								{
+									"key": "Date",
+									"value": "Mon, 19 Nov 2018 03:53:40 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "19"
+								}
+							],
+							"cookie": [],
+							"body": "{ \n    \"total_balance\": <string>, \n    \"confirmed_balance\": <string>, \n    \"unconfirmed_balance\": <string>, \n}"
+						}
+					]
+				},
+				{
+					"name": "/v1/unlockwallet",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Grpc-Metadata-macaroon",
+								"type": "text",
+								"value": "macaroon"
+							},
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"wallet_password\":<byte>,\n  \"recovery_window\":<int32>\n}"
+						},
+						"url": {
+							"raw": "{{http}}://{{url}}:{{port}}/v1/initwallet",
+							"protocol": "{{http}}",
+							"host": [
+								"{{url}}"
+							],
+							"port": "{{port}}",
+							"path": [
+								"v1",
+								"initwallet"
+							]
+						},
+						"description": "### POST /v1/unlockwallet\nUnlockWallet is used at startup of lnd to provide a password to unlock the wallet database.\n\nField | Type | Placement | Description\n----- | ---- | --------- | ----------- \nwallet_password | byte | body | * wallet_password should be the current valid passphrase for the daemon. This will be required to decrypt on-disk material that the daemon requires to function properly.\nrecovery_window | int32 | body | * recovery_window is an optional argument specifying the address lookahead when restoring a wallet seed. The recovery window applies to each invdividual branch of the BIP44 derivation paths. Supplying a recovery window of zero indicates that no addresses should be recovered, such after the first initialization of the wallet.\n\n### Response \n\nThis response has no parameters."
+					},
+					"response": [
+						{
+							"name": "/v1/balance/channels",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Grpc-Metadata-macaroon",
+										"type": "text",
+										"value": "macaroon"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{http}}://{{url}}:{{port}}/v1/balance/channels",
+									"protocol": "{{http}}",
+									"host": [
+										"{{url}}"
+									],
+									"port": "{{port}}",
+									"path": [
+										"v1",
+										"balance",
+										"channels"
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": "{ \n    \"balance\": <string>, \n    \"pending_open_balance\": <string>, \n}"
+						},
+						{
+							"name": "/v1/balance/blockchain",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{http}}://{{url}}:{{port}}/v1/balance/blockchain",
+									"protocol": "{{http}}",
+									"host": [
+										"{{url}}"
+									],
+									"port": "{{port}}",
+									"path": [
+										"v1",
+										"balance",
+										"blockchain"
+									]
+								}
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": "plain",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "text/plain; charset=utf-8"
+								},
+								{
+									"key": "X-Content-Type-Options",
+									"value": "nosniff"
+								},
+								{
+									"key": "Date",
+									"value": "Mon, 19 Nov 2018 03:53:40 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "19"
+								}
+							],
+							"cookie": [],
+							"body": "{ \n    \"total_balance\": <string>, \n    \"confirmed_balance\": <string>, \n    \"unconfirmed_balance\": <string>, \n}"
+						}
+					]
+				},
+				{
+					"name": "/v1/genseed",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Grpc-Metadata-macaroon",
+								"type": "text",
+								"value": "macaroon"
+							},
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{http}}://{{url}}:{{port}}/v1/genseed",
+							"protocol": "{{http}}",
+							"host": [
+								"{{url}}"
+							],
+							"port": "{{port}}",
+							"path": [
+								"v1",
+								"genseed"
+							]
+						},
+						"description": "### GET /v1/genseed\n* GenSeed is the first method that should be used to instantiate a new lnd instance. This method allows a caller to generate a new aezeed cipher seed given an optional passphrase. If provided, the passphrase will be necessary to decrypt the cipherseed to expose the internal wallet seed.\n\nField | Type | Placement | Description\n----- | ---- | --------- | ----------- \naezeed_passphrase | string | query | * aezeed_passphrase is an optional user provided passphrase that will be used to encrypt the generated aezeed cipher seed.\nseed_entropy | string | query | * seed_entropy is an optional 16-bytes generated via CSPRNG. If not specified, then a fresh set of randomness will be used to create the seed.\n\n### Response \n\nField | Type | Description\n----- | ---- | ----------- \ncipher_seed_mnemonic | array string | * cipher_seed_mnemonic is a 24-word mnemonic that encodes a prior aezeed cipher seed obtained by the user. This field is optional, as if not provided, then the daemon will generate a new cipher seed for the user. Otherwise, then the daemon will attempt to recover the wallet state linked to this cipher seed. \nenciphered_seed | byte | * enciphered_seed are the raw aezeed cipher seed bytes. This is the raw cipher text before run through our mnemonic encoding scheme."
+					},
+					"response": [
+						{
+							"name": "/v1/balance/blockchain",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{http}}://{{url}}:{{port}}/v1/balance/blockchain",
+									"protocol": "{{http}}",
+									"host": [
+										"{{url}}"
+									],
+									"port": "{{port}}",
+									"path": [
+										"v1",
+										"balance",
+										"blockchain"
+									]
+								}
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": "plain",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "text/plain; charset=utf-8"
+								},
+								{
+									"key": "X-Content-Type-Options",
+									"value": "nosniff"
+								},
+								{
+									"key": "Date",
+									"value": "Mon, 19 Nov 2018 03:53:40 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "19"
+								}
+							],
+							"cookie": [],
+							"body": "{ \n    \"total_balance\": <string>, \n    \"confirmed_balance\": <string>, \n    \"unconfirmed_balance\": <string>, \n}"
+						},
+						{
+							"name": "/v1/balance/channels",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Grpc-Metadata-macaroon",
+										"type": "text",
+										"value": "macaroon"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{http}}://{{url}}:{{port}}/v1/balance/channels",
+									"protocol": "{{http}}",
+									"host": [
+										"{{url}}"
+									],
+									"port": "{{port}}",
+									"path": [
+										"v1",
+										"balance",
+										"channels"
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": "{ \n    \"balance\": <string>, \n    \"pending_open_balance\": <string>, \n}"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Invoice",
+			"item": [
+				{
+					"name": "/v1/invoice/{r_hash_str}",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Grpc-Metadata-macaroon",
+								"type": "text",
+								"value": "macaroon"
+							},
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{http}}://{{url}}:{{port}}/v1/invoice",
+							"protocol": "{{http}}",
+							"host": [
+								"{{url}}"
+							],
+							"port": "{{port}}",
+							"path": [
+								"v1",
+								"invoice"
+							]
+						},
+						"description": "### GET /v1/invoice/{r_hash_str}\nLookupInvoice attempts to look up an invoice according to its payment hash. The passed payment hash *must* be exactly 32 bytes, if not, an error is returned.\n\nField | Type | Placement | Description\n----- | ---- | --------- | ----------- \nr_hash_str | string | path | \nr_hash | string | query | / The payment hash of the invoice to be looked up.\n\n### Response \n\nField | Type | Description\n----- | ---- | ----------- \nmemo | string | * An optional memo to attach along with the invoice. Used for record keeping purposes for the invoice's creator, and will also be set in the description field of the encoded payment request if the description_hash field is not being used. \nreceipt | byte | / An optional cryptographic receipt of payment \nr_preimage | byte | * The hex-encoded preimage (32 byte) which will allow settling an incoming HTLC payable to this preimage \nr_hash | byte | / The hash of the preimage \nvalue | string | / The value of this invoice in satoshis \nsettled | boolean | / Whether this invoice has been fulfilled \ncreation_date | string | / When this invoice was created \nsettle_date | string | / When this invoice was settled \npayment_request | string | * A bare-bones invoice for a payment within the Lightning Network.  With the details of the invoice, the sender has all the data necessary to send a payment to the recipient. \ndescription_hash | byte | * Hash (SHA-256) of a description of the payment. Used if the description of payment (memo) is too long to naturally fit within the description field of an encoded payment request. \nexpiry | string | / Payment request expiry time in seconds. Default is 3600 (1 hour). \nfallback_addr | string | / Fallback on-chain address. \ncltv_expiry | string | / Delta to use for the time-lock of the CLTV extended to the final hop. \nroute_hints | array RouteHint | * Route hints that can each be individually used to assist in reaching the invoice's destination. \nprivate | boolean | / Whether this invoice should include routing hints for private channels. \nadd_index | string | * The \"add\" index of this invoice. Each newly created invoice will increment this index making it monotonically increasing. Callers to the SubscribeInvoices call can use this to instantly get notified of all added invoices with an add_index greater than this one. \nsettle_index | string | * The \"settle\" index of this invoice. Each newly settled invoice will increment this index making it monotonically increasing. Callers to the SubscribeInvoices call can use this to instantly get notified of all settled invoices with an settle_index greater than this one. \namt_paid | string | / Deprecated, use amt_paid_sat or amt_paid_msat. \namt_paid_sat | string | * The amount that was accepted for this invoice, in satoshis. This will ONLY be set if this invoice has been settled. We provide this field as if the invoice was created with a zero value, then we need to record what amount was ultimately accepted. Additionally, it's possible that the sender paid MORE that was specified in the original invoice. So we'll record that here as well. \namt_paid_msat | string | * The amount that was accepted for this invoice, in millisatoshis. This will ONLY be set if this invoice has been settled. We provide this field as if the invoice was created with a zero value, then we need to record what amount was ultimately accepted. Additionally, it's possible that the sender paid MORE that was specified in the original invoice. So we'll record that here as well."
+					},
+					"response": [
+						{
+							"name": "/v1/balance/channels",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Grpc-Metadata-macaroon",
+										"type": "text",
+										"value": "macaroon"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{http}}://{{url}}:{{port}}/v1/balance/channels",
+									"protocol": "{{http}}",
+									"host": [
+										"{{url}}"
+									],
+									"port": "{{port}}",
+									"path": [
+										"v1",
+										"balance",
+										"channels"
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": "{ \n    \"balance\": <string>, \n    \"pending_open_balance\": <string>, \n}"
+						},
+						{
+							"name": "/v1/balance/blockchain",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{http}}://{{url}}:{{port}}/v1/balance/blockchain",
+									"protocol": "{{http}}",
+									"host": [
+										"{{url}}"
+									],
+									"port": "{{port}}",
+									"path": [
+										"v1",
+										"balance",
+										"blockchain"
+									]
+								}
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": "plain",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "text/plain; charset=utf-8"
+								},
+								{
+									"key": "X-Content-Type-Options",
+									"value": "nosniff"
+								},
+								{
+									"key": "Date",
+									"value": "Mon, 19 Nov 2018 03:53:40 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "19"
+								}
+							],
+							"cookie": [],
+							"body": "{ \n    \"total_balance\": <string>, \n    \"confirmed_balance\": <string>, \n    \"unconfirmed_balance\": <string>, \n}"
+						}
+					]
+				},
+				{
+					"name": "/v1/invoices",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Grpc-Metadata-macaroon",
+								"type": "text",
+								"value": "macaroon"
+							},
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"memo\":<string>,\n  \"receipt\":<byte>,\n  \"r_preimage\":<byte>,\n  \"r_hash\":<byte>,\n  \"value\":<string>,\n  \"settled\":<boolean>,\n  \"creation_date\":<string>,\n  \"settle_date\":<string>,\n  \"payment_request\":<string>,\n  \"description_hash\":<byte>,\n  \"expiry\":<string>,\n  \"fallback_addr\":<string>,\n  \"cltv_expiry\":<string>,\n  \"route_hints\":<array RouteHint>,\n  \"private\":<boolean>,\n  \"add_index\":<string>,\n  \"settle_index\":<string>,\n  \"amt_paid\":<string>,\n  \"amt_paid_sat\":<string>,\n  \"amt_paid_msat\":<string>\n}"
+						},
+						"url": {
+							"raw": "{{http}}://{{url}}:{{port}}/v1/invoices",
+							"protocol": "{{http}}",
+							"host": [
+								"{{url}}"
+							],
+							"port": "{{port}}",
+							"path": [
+								"v1",
+								"invoices"
+							]
+						},
+						"description": "### POST /v1/invoices\nAddInvoice attempts to add a new invoice to the invoice database. Any duplicated invoices are rejected, therefore all invoices *must* have a unique payment preimage.\n\nField | Type | Placement | Description\n----- | ---- | --------- | ----------- \nmemo | string | body | * An optional memo to attach along with the invoice. Used for record keeping purposes for the invoice's creator, and will also be set in the description field of the encoded payment request if the description_hash field is not being used.\nreceipt | byte | body | / An optional cryptographic receipt of payment\nr_preimage | byte | body | * The hex-encoded preimage (32 byte) which will allow settling an incoming HTLC payable to this preimage\nr_hash | byte | body | / The hash of the preimage\nvalue | string | body | / The value of this invoice in satoshis\nsettled | boolean | body | / Whether this invoice has been fulfilled\ncreation_date | string | body | / When this invoice was created\nsettle_date | string | body | / When this invoice was settled\npayment_request | string | body | * A bare-bones invoice for a payment within the Lightning Network.  With the details of the invoice, the sender has all the data necessary to send a payment to the recipient.\ndescription_hash | byte | body | * Hash (SHA-256) of a description of the payment. Used if the description of payment (memo) is too long to naturally fit within the description field of an encoded payment request.\nexpiry | string | body | / Payment request expiry time in seconds. Default is 3600 (1 hour).\nfallback_addr | string | body | / Fallback on-chain address.\ncltv_expiry | string | body | / Delta to use for the time-lock of the CLTV extended to the final hop.\nroute_hints | array RouteHint | body | * Route hints that can each be individually used to assist in reaching the invoice's destination.\nprivate | boolean | body | / Whether this invoice should include routing hints for private channels.\nadd_index | string | body | * The \"add\" index of this invoice. Each newly created invoice will increment this index making it monotonically increasing. Callers to the SubscribeInvoices call can use this to instantly get notified of all added invoices with an add_index greater than this one.\nsettle_index | string | body | * The \"settle\" index of this invoice. Each newly settled invoice will increment this index making it monotonically increasing. Callers to the SubscribeInvoices call can use this to instantly get notified of all settled invoices with an settle_index greater than this one.\namt_paid | string | body | / Deprecated, use amt_paid_sat or amt_paid_msat.\namt_paid_sat | string | body | * The amount that was accepted for this invoice, in satoshis. This will ONLY be set if this invoice has been settled. We provide this field as if the invoice was created with a zero value, then we need to record what amount was ultimately accepted. Additionally, it's possible that the sender paid MORE that was specified in the original invoice. So we'll record that here as well.\namt_paid_msat | string | body | * The amount that was accepted for this invoice, in millisatoshis. This will ONLY be set if this invoice has been settled. We provide this field as if the invoice was created with a zero value, then we need to record what amount was ultimately accepted. Additionally, it's possible that the sender paid MORE that was specified in the original invoice. So we'll record that here as well.\n\n### Response \n\nField | Type | Description\n----- | ---- | ----------- \nr_hash | byte |  \npayment_request | string | * A bare-bones invoice for a payment within the Lightning Network.  With the details of the invoice, the sender has all the data necessary to send a payment to the recipient. \nadd_index | string | * The \"add\" index of this invoice. Each newly created invoice will increment this index making it monotonically increasing. Callers to the SubscribeInvoices call can use this to instantly get notified of all added invoices with an add_index greater than this one."
+					},
+					"response": [
+						{
+							"name": "/v1/balance/channels",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Grpc-Metadata-macaroon",
+										"type": "text",
+										"value": "macaroon"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{http}}://{{url}}:{{port}}/v1/balance/channels",
+									"protocol": "{{http}}",
+									"host": [
+										"{{url}}"
+									],
+									"port": "{{port}}",
+									"path": [
+										"v1",
+										"balance",
+										"channels"
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": "{ \n    \"balance\": <string>, \n    \"pending_open_balance\": <string>, \n}"
+						},
+						{
+							"name": "/v1/balance/blockchain",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{http}}://{{url}}:{{port}}/v1/balance/blockchain",
+									"protocol": "{{http}}",
+									"host": [
+										"{{url}}"
+									],
+									"port": "{{port}}",
+									"path": [
+										"v1",
+										"balance",
+										"blockchain"
+									]
+								}
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": "plain",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "text/plain; charset=utf-8"
+								},
+								{
+									"key": "X-Content-Type-Options",
+									"value": "nosniff"
+								},
+								{
+									"key": "Date",
+									"value": "Mon, 19 Nov 2018 03:53:40 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "19"
+								}
+							],
+							"cookie": [],
+							"body": "{ \n    \"total_balance\": <string>, \n    \"confirmed_balance\": <string>, \n    \"unconfirmed_balance\": <string>, \n}"
+						}
+					]
+				},
+				{
+					"name": "/v1/invoices/subscribe",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Grpc-Metadata-macaroon",
+								"type": "text",
+								"value": "macaroon"
+							},
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{http}}://{{url}}:{{port}}/v1/invoices/subscribe",
+							"protocol": "{{http}}",
+							"host": [
+								"{{url}}"
+							],
+							"port": "{{port}}",
+							"path": [
+								"v1",
+								"invoices",
+								"subscribe"
+							]
+						},
+						"description": "### GET /v1/invoices/subscribe\n* SubscribeInvoices returns a uni-directional stream (server -> client) for notifying the client of newly added/settled invoices. The caller can optionally specify the add_index and/or the settle_index. If the add_index is specified, then we'll first start by sending add invoice events for all invoices with an add_index greater than the specified value.  If the settle_index is specified, the next, we'll send out all settle events for invoices with a settle_index greater than the specified value.  One or both of these fields can be set. If no fields are set, then we'll only send out the latest add/settle events.\n\nField | Type | Placement | Description\n----- | ---- | --------- | ----------- \nadd_index | string | query | * If specified (non-zero), then we'll first start by sending out notifications for all added indexes with an add_index greater than this value. This allows callers to catch up on any events they missed while they weren't connected to the streaming RPC.\nsettle_index | string | query | * If specified (non-zero), then we'll first start by sending out notifications for all settled indexes with an settle_index greater than this value. This allows callers to catch up on any events they missed while they weren't connected to the streaming RPC.\n\n### Response (streaming)\n\nField | Type | Description\n----- | ---- | ----------- \nmemo | string | * An optional memo to attach along with the invoice. Used for record keeping purposes for the invoice's creator, and will also be set in the description field of the encoded payment request if the description_hash field is not being used. \nreceipt | byte | / An optional cryptographic receipt of payment \nr_preimage | byte | * The hex-encoded preimage (32 byte) which will allow settling an incoming HTLC payable to this preimage \nr_hash | byte | / The hash of the preimage \nvalue | string | / The value of this invoice in satoshis \nsettled | boolean | / Whether this invoice has been fulfilled \ncreation_date | string | / When this invoice was created \nsettle_date | string | / When this invoice was settled \npayment_request | string | * A bare-bones invoice for a payment within the Lightning Network.  With the details of the invoice, the sender has all the data necessary to send a payment to the recipient. \ndescription_hash | byte | * Hash (SHA-256) of a description of the payment. Used if the description of payment (memo) is too long to naturally fit within the description field of an encoded payment request. \nexpiry | string | / Payment request expiry time in seconds. Default is 3600 (1 hour). \nfallback_addr | string | / Fallback on-chain address. \ncltv_expiry | string | / Delta to use for the time-lock of the CLTV extended to the final hop. \nroute_hints | array RouteHint | * Route hints that can each be individually used to assist in reaching the invoice's destination. \nprivate | boolean | / Whether this invoice should include routing hints for private channels. \nadd_index | string | * The \"add\" index of this invoice. Each newly created invoice will increment this index making it monotonically increasing. Callers to the SubscribeInvoices call can use this to instantly get notified of all added invoices with an add_index greater than this one. \nsettle_index | string | * The \"settle\" index of this invoice. Each newly settled invoice will increment this index making it monotonically increasing. Callers to the SubscribeInvoices call can use this to instantly get notified of all settled invoices with an settle_index greater than this one. \namt_paid | string | / Deprecated, use amt_paid_sat or amt_paid_msat. \namt_paid_sat | string | * The amount that was accepted for this invoice, in satoshis. This will ONLY be set if this invoice has been settled. We provide this field as if the invoice was created with a zero value, then we need to record what amount was ultimately accepted. Additionally, it's possible that the sender paid MORE that was specified in the original invoice. So we'll record that here as well. \namt_paid_msat | string | * The amount that was accepted for this invoice, in millisatoshis. This will ONLY be set if this invoice has been settled. We provide this field as if the invoice was created with a zero value, then we need to record what amount was ultimately accepted. Additionally, it's possible that the sender paid MORE that was specified in the original invoice. So we'll record that here as well."
+					},
+					"response": [
+						{
+							"name": "/v1/balance/blockchain",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{http}}://{{url}}:{{port}}/v1/balance/blockchain",
+									"protocol": "{{http}}",
+									"host": [
+										"{{url}}"
+									],
+									"port": "{{port}}",
+									"path": [
+										"v1",
+										"balance",
+										"blockchain"
+									]
+								}
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": "plain",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "text/plain; charset=utf-8"
+								},
+								{
+									"key": "X-Content-Type-Options",
+									"value": "nosniff"
+								},
+								{
+									"key": "Date",
+									"value": "Mon, 19 Nov 2018 03:53:40 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "19"
+								}
+							],
+							"cookie": [],
+							"body": "{ \n    \"total_balance\": <string>, \n    \"confirmed_balance\": <string>, \n    \"unconfirmed_balance\": <string>, \n}"
+						},
+						{
+							"name": "/v1/balance/channels",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Grpc-Metadata-macaroon",
+										"type": "text",
+										"value": "macaroon"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{http}}://{{url}}:{{port}}/v1/balance/channels",
+									"protocol": "{{http}}",
+									"host": [
+										"{{url}}"
+									],
+									"port": "{{port}}",
+									"path": [
+										"v1",
+										"balance",
+										"channels"
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": "{ \n    \"balance\": <string>, \n    \"pending_open_balance\": <string>, \n}"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Payments",
+			"item": [
+				{
+					"name": "/v1/newaddress",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Grpc-Metadata-macaroon",
+								"type": "text",
+								"value": "macaroon"
+							},
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{http}}://{{url}}:{{port}}/v1/newaddress",
+							"protocol": "{{http}}",
+							"host": [
+								"{{url}}"
+							],
+							"port": "{{port}}",
+							"path": [
+								"v1",
+								"newaddress"
+							]
+						},
+						"description": "### GET /v1/newaddress\nNewAddress creates a new address under control of the local wallet.\n\nField | Type | Placement | Description\n----- | ---- | --------- | ----------- \ntype | string | query | / The address type.\n\n### Response \n\nField | Type | Description\n----- | ---- | ----------- \naddress | string | / The newly generated wallet address"
+					},
+					"response": [
+						{
+							"name": "/v1/balance/blockchain",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{http}}://{{url}}:{{port}}/v1/balance/blockchain",
+									"protocol": "{{http}}",
+									"host": [
+										"{{url}}"
+									],
+									"port": "{{port}}",
+									"path": [
+										"v1",
+										"balance",
+										"blockchain"
+									]
+								}
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": "plain",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "text/plain; charset=utf-8"
+								},
+								{
+									"key": "X-Content-Type-Options",
+									"value": "nosniff"
+								},
+								{
+									"key": "Date",
+									"value": "Mon, 19 Nov 2018 03:53:40 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "19"
+								}
+							],
+							"cookie": [],
+							"body": "{ \n    \"total_balance\": <string>, \n    \"confirmed_balance\": <string>, \n    \"unconfirmed_balance\": <string>, \n}"
+						},
+						{
+							"name": "/v1/balance/channels",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Grpc-Metadata-macaroon",
+										"type": "text",
+										"value": "macaroon"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{http}}://{{url}}:{{port}}/v1/balance/channels",
+									"protocol": "{{http}}",
+									"host": [
+										"{{url}}"
+									],
+									"port": "{{port}}",
+									"path": [
+										"v1",
+										"balance",
+										"channels"
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": "{ \n    \"balance\": <string>, \n    \"pending_open_balance\": <string>, \n}"
+						}
+					]
+				},
+				{
+					"name": "/v1/payments",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Grpc-Metadata-macaroon",
+								"type": "text",
+								"value": "macaroon"
+							},
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{http}}://{{url}}:{{port}}/v1/payments",
+							"protocol": "{{http}}",
+							"host": [
+								"{{url}}"
+							],
+							"port": "{{port}}",
+							"path": [
+								"v1",
+								"payments"
+							]
+						},
+						"description": "### GET /v1/payments\nListPayments returns a list of all outgoing payments.\n\nThis request has no parameters.\n\n### Response \n\nField | Type | Description\n----- | ---- | ----------- \npayments | array Payment | / The list of payments"
+					},
+					"response": [
+						{
+							"name": "/v1/balance/channels",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Grpc-Metadata-macaroon",
+										"type": "text",
+										"value": "macaroon"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{http}}://{{url}}:{{port}}/v1/balance/channels",
+									"protocol": "{{http}}",
+									"host": [
+										"{{url}}"
+									],
+									"port": "{{port}}",
+									"path": [
+										"v1",
+										"balance",
+										"channels"
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": "{ \n    \"balance\": <string>, \n    \"pending_open_balance\": <string>, \n}"
+						},
+						{
+							"name": "/v1/balance/blockchain",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{http}}://{{url}}:{{port}}/v1/balance/blockchain",
+									"protocol": "{{http}}",
+									"host": [
+										"{{url}}"
+									],
+									"port": "{{port}}",
+									"path": [
+										"v1",
+										"balance",
+										"blockchain"
+									]
+								}
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": "plain",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "text/plain; charset=utf-8"
+								},
+								{
+									"key": "X-Content-Type-Options",
+									"value": "nosniff"
+								},
+								{
+									"key": "Date",
+									"value": "Mon, 19 Nov 2018 03:53:40 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "19"
+								}
+							],
+							"cookie": [],
+							"body": "{ \n    \"total_balance\": <string>, \n    \"confirmed_balance\": <string>, \n    \"unconfirmed_balance\": <string>, \n}"
+						}
+					]
+				},
+				{
+					"name": "/v1/payments",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Grpc-Metadata-macaroon",
+								"type": "text",
+								"value": "macaroon"
+							},
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{http}}://{{url}}:{{port}}/v1/payments",
+							"protocol": "{{http}}",
+							"host": [
+								"{{url}}"
+							],
+							"port": "{{port}}",
+							"path": [
+								"v1",
+								"payments"
+							]
+						},
+						"description": "### DELETE /v1/payments\n* DeleteAllPayments deletes all outgoing payments from DB.\n\nThis request has no parameters.\n\n### Response \n\nThis response has no parameters."
+					},
+					"response": [
+						{
+							"name": "/v1/balance/blockchain",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{http}}://{{url}}:{{port}}/v1/balance/blockchain",
+									"protocol": "{{http}}",
+									"host": [
+										"{{url}}"
+									],
+									"port": "{{port}}",
+									"path": [
+										"v1",
+										"balance",
+										"blockchain"
+									]
+								}
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": "plain",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "text/plain; charset=utf-8"
+								},
+								{
+									"key": "X-Content-Type-Options",
+									"value": "nosniff"
+								},
+								{
+									"key": "Date",
+									"value": "Mon, 19 Nov 2018 03:53:40 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "19"
+								}
+							],
+							"cookie": [],
+							"body": "{ \n    \"total_balance\": <string>, \n    \"confirmed_balance\": <string>, \n    \"unconfirmed_balance\": <string>, \n}"
+						},
+						{
+							"name": "/v1/balance/channels",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Grpc-Metadata-macaroon",
+										"type": "text",
+										"value": "macaroon"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{http}}://{{url}}:{{port}}/v1/balance/channels",
+									"protocol": "{{http}}",
+									"host": [
+										"{{url}}"
+									],
+									"port": "{{port}}",
+									"path": [
+										"v1",
+										"balance",
+										"channels"
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": "{ \n    \"balance\": <string>, \n    \"pending_open_balance\": <string>, \n}"
+						}
+					]
+				},
+				{
+					"name": "/v1/payreq/{pay_req}",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Grpc-Metadata-macaroon",
+								"type": "text",
+								"value": "macaroon"
+							},
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{http}}://{{url}}:{{port}}/v1/payreq/:pay_req",
+							"protocol": "{{http}}",
+							"host": [
+								"{{url}}"
+							],
+							"port": "{{port}}",
+							"path": [
+								"v1",
+								"payreq",
+								":pay_req"
+							],
+							"variable": [
+								{
+									"key": "pay_req",
+									"value": ""
+								}
+							]
+						},
+						"description": "### GET /v1/payreq/{pay_req}\nDecodePayReq takes an encoded payment request string and attempts to decode it, returning a full description of the conditions encoded within the payment request.\n\nField | Type | Placement | Description\n----- | ---- | --------- | ----------- \npay_req | string | path |  |\n\n### Response \n\nField | Type | Description\n----- | ---- | ----------- \ndestination | string |   |\npayment_hash | string |   |\nnum_satoshis | string |   |\ntimestamp | string |   |\nexpiry | string |   |\ndescription | string |  | \ndescription_hash | string |   |\nfallback_addr | string |   |\ncltv_expiry | string |   |\nroute_hints | array RouteHint | |"
+					},
+					"response": [
+						{
+							"name": "/v1/balance/blockchain",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{http}}://{{url}}:{{port}}/v1/balance/blockchain",
+									"protocol": "{{http}}",
+									"host": [
+										"{{url}}"
+									],
+									"port": "{{port}}",
+									"path": [
+										"v1",
+										"balance",
+										"blockchain"
+									]
+								}
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": "plain",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "text/plain; charset=utf-8"
+								},
+								{
+									"key": "X-Content-Type-Options",
+									"value": "nosniff"
+								},
+								{
+									"key": "Date",
+									"value": "Mon, 19 Nov 2018 03:53:40 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "19"
+								}
+							],
+							"cookie": [],
+							"body": "{ \n    \"total_balance\": <string>, \n    \"confirmed_balance\": <string>, \n    \"unconfirmed_balance\": <string>, \n}"
+						},
+						{
+							"name": "/v1/balance/channels",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Grpc-Metadata-macaroon",
+										"type": "text",
+										"value": "macaroon"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{http}}://{{url}}:{{port}}/v1/balance/channels",
+									"protocol": "{{http}}",
+									"host": [
+										"{{url}}"
+									],
+									"port": "{{port}}",
+									"path": [
+										"v1",
+										"balance",
+										"channels"
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": "{ \n    \"balance\": <string>, \n    \"pending_open_balance\": <string>, \n}"
+						}
+					]
+				},
+				{
+					"name": "/v1/transactions",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Grpc-Metadata-macaroon",
+								"type": "text",
+								"value": "macaroon"
+							},
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{http}}://{{url}}:{{port}}/v1/transactions",
+							"protocol": "{{http}}",
+							"host": [
+								"{{url}}"
+							],
+							"port": "{{port}}",
+							"path": [
+								"v1",
+								"transactions"
+							]
+						},
+						"description": "### GET /v1/transactions\nGetTransactions returns a list describing all the known transactions relevant to the wallet.\n\nThis request has no parameters.\n\n### Response \n\nField | Type | Description\n----- | ---- | ----------- \ntransactions | array Transaction | / The list of transactions relevant to the wallet."
+					},
+					"response": [
+						{
+							"name": "/v1/balance/channels",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Grpc-Metadata-macaroon",
+										"type": "text",
+										"value": "macaroon"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{http}}://{{url}}:{{port}}/v1/balance/channels",
+									"protocol": "{{http}}",
+									"host": [
+										"{{url}}"
+									],
+									"port": "{{port}}",
+									"path": [
+										"v1",
+										"balance",
+										"channels"
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": "{ \n    \"balance\": <string>, \n    \"pending_open_balance\": <string>, \n}"
+						},
+						{
+							"name": "/v1/balance/blockchain",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{http}}://{{url}}:{{port}}/v1/balance/blockchain",
+									"protocol": "{{http}}",
+									"host": [
+										"{{url}}"
+									],
+									"port": "{{port}}",
+									"path": [
+										"v1",
+										"balance",
+										"blockchain"
+									]
+								}
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": "plain",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "text/plain; charset=utf-8"
+								},
+								{
+									"key": "X-Content-Type-Options",
+									"value": "nosniff"
+								},
+								{
+									"key": "Date",
+									"value": "Mon, 19 Nov 2018 03:53:40 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "19"
+								}
+							],
+							"cookie": [],
+							"body": "{ \n    \"total_balance\": <string>, \n    \"confirmed_balance\": <string>, \n    \"unconfirmed_balance\": <string>, \n}"
+						}
+					]
+				},
+				{
+					"name": "/v1/transactions",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Grpc-Metadata-macaroon",
+								"type": "text",
+								"value": "macaroon"
+							},
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"addr\":<string>,\n  \"amount\":<string>,\n  \"target_conf\":<int32>,\n  \"sat_per_byte\":<string>\n}"
+						},
+						"url": {
+							"raw": "{{http}}://{{url}}:{{port}}/v1/transactions",
+							"protocol": "{{http}}",
+							"host": [
+								"{{url}}"
+							],
+							"port": "{{port}}",
+							"path": [
+								"v1",
+								"transactions"
+							]
+						},
+						"description": "### POST /v1/transactions\nSendCoins executes a request to send coins to a particular address. Unlike SendMany, this RPC call only allows creating a single output at a time. If neither target_conf, or sat_per_byte are set, then the internal wallet will consult its fee model to determine a fee for the default confirmation target.\n\nField | Type | Placement | Description\n----- | ---- | --------- | ----------- \naddr | string | body | / The address to send coins to\namount | string | body | / The amount in satoshis to send\ntarget_conf | int32 | body | / The target number of blocks that this transaction should be confirmed by.\nsat_per_byte | string | body | / A manual fee rate set in sat/byte that should be used when crafting the transaction.\n\n### Response \n\nField | Type | Description\n----- | ---- | ----------- \ntxid | string | / The transaction ID of the transaction"
+					},
+					"response": [
+						{
+							"name": "/v1/balance/blockchain",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{http}}://{{url}}:{{port}}/v1/balance/blockchain",
+									"protocol": "{{http}}",
+									"host": [
+										"{{url}}"
+									],
+									"port": "{{port}}",
+									"path": [
+										"v1",
+										"balance",
+										"blockchain"
+									]
+								}
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": "plain",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "text/plain; charset=utf-8"
+								},
+								{
+									"key": "X-Content-Type-Options",
+									"value": "nosniff"
+								},
+								{
+									"key": "Date",
+									"value": "Mon, 19 Nov 2018 03:53:40 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "19"
+								}
+							],
+							"cookie": [],
+							"body": "{ \n    \"total_balance\": <string>, \n    \"confirmed_balance\": <string>, \n    \"unconfirmed_balance\": <string>, \n}"
+						},
+						{
+							"name": "/v1/balance/channels",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Grpc-Metadata-macaroon",
+										"type": "text",
+										"value": "macaroon"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{http}}://{{url}}:{{port}}/v1/balance/channels",
+									"protocol": "{{http}}",
+									"host": [
+										"{{url}}"
+									],
+									"port": "{{port}}",
+									"path": [
+										"v1",
+										"balance",
+										"channels"
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": "{ \n    \"balance\": <string>, \n    \"pending_open_balance\": <string>, \n}"
+						}
+					]
+				},
+				{
+					"name": "/v1/fees",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Grpc-Metadata-macaroon",
+								"type": "text",
+								"value": "macaroon"
+							},
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{http}}://{{url}}:{{port}}/v1/fees",
+							"protocol": "{{http}}",
+							"host": [
+								"{{url}}"
+							],
+							"port": "{{port}}",
+							"path": [
+								"v1",
+								"fees"
+							]
+						},
+						"description": "### GET /v1/fees\nFeeReport allows the caller to obtain a report detailing the current fee schedule enforced by the node globally for each channel.\n\nThis request has no parameters.\n\n### Response \n\nField | Type | Description\n----- | ---- | ----------- \nchannel_fees | array ChannelFeeReport | / An array of channel fee reports which describes the current fee schedule for each channel. \nday_fee_sum | string | / The total amount of fee revenue (in satoshis) the switch has collected over the past 24 hrs. \nweek_fee_sum | string | / The total amount of fee revenue (in satoshis) the switch has collected over the past 1 week. \nmonth_fee_sum | string | / The total amount of fee revenue (in satoshis) the switch has collected over the past 1 month."
+					},
+					"response": [
+						{
+							"name": "/v1/balance/channels",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Grpc-Metadata-macaroon",
+										"type": "text",
+										"value": "macaroon"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{http}}://{{url}}:{{port}}/v1/balance/channels",
+									"protocol": "{{http}}",
+									"host": [
+										"{{url}}"
+									],
+									"port": "{{port}}",
+									"path": [
+										"v1",
+										"balance",
+										"channels"
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": "{ \n    \"balance\": <string>, \n    \"pending_open_balance\": <string>, \n}"
+						},
+						{
+							"name": "/v1/balance/blockchain",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{http}}://{{url}}:{{port}}/v1/balance/blockchain",
+									"protocol": "{{http}}",
+									"host": [
+										"{{url}}"
+									],
+									"port": "{{port}}",
+									"path": [
+										"v1",
+										"balance",
+										"blockchain"
+									]
+								}
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": "plain",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "text/plain; charset=utf-8"
+								},
+								{
+									"key": "X-Content-Type-Options",
+									"value": "nosniff"
+								},
+								{
+									"key": "Date",
+									"value": "Mon, 19 Nov 2018 03:53:40 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "19"
+								}
+							],
+							"cookie": [],
+							"body": "{ \n    \"total_balance\": <string>, \n    \"confirmed_balance\": <string>, \n    \"unconfirmed_balance\": <string>, \n}"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Peers",
+			"item": [
+				{
+					"name": "/v1/peers",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Grpc-Metadata-macaroon",
+								"type": "text",
+								"value": "macaroon"
+							},
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{http}}://{{url}}:{{port}}/v1/peers",
+							"protocol": "{{http}}",
+							"host": [
+								"{{url}}"
+							],
+							"port": "{{port}}",
+							"path": [
+								"v1",
+								"peers"
+							]
+						},
+						"description": "### GET /v1/peers\nListPeers returns a verbose listing of all currently active peers.\n\nThis request has no parameters.\n\n### Response \n\nField | Type | Description\n----- | ---- | ----------- \npeers | array Peer | / The list of currently connected peers"
+					},
+					"response": [
+						{
+							"name": "/v1/balance/channels",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Grpc-Metadata-macaroon",
+										"type": "text",
+										"value": "macaroon"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{http}}://{{url}}:{{port}}/v1/balance/channels",
+									"protocol": "{{http}}",
+									"host": [
+										"{{url}}"
+									],
+									"port": "{{port}}",
+									"path": [
+										"v1",
+										"balance",
+										"channels"
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": "{ \n    \"balance\": <string>, \n    \"pending_open_balance\": <string>, \n}"
+						},
+						{
+							"name": "/v1/balance/blockchain",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{http}}://{{url}}:{{port}}/v1/balance/blockchain",
+									"protocol": "{{http}}",
+									"host": [
+										"{{url}}"
+									],
+									"port": "{{port}}",
+									"path": [
+										"v1",
+										"balance",
+										"blockchain"
+									]
+								}
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": "plain",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "text/plain; charset=utf-8"
+								},
+								{
+									"key": "X-Content-Type-Options",
+									"value": "nosniff"
+								},
+								{
+									"key": "Date",
+									"value": "Mon, 19 Nov 2018 03:53:40 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "19"
+								}
+							],
+							"cookie": [],
+							"body": "{ \n    \"total_balance\": <string>, \n    \"confirmed_balance\": <string>, \n    \"unconfirmed_balance\": <string>, \n}"
+						}
+					]
+				},
+				{
+					"name": "/v1/peers",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Grpc-Metadata-macaroon",
+								"type": "text",
+								"value": "macaroon"
+							},
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{http}}://{{url}}:{{port}}/v1/peers",
+							"protocol": "{{http}}",
+							"host": [
+								"{{url}}"
+							],
+							"port": "{{port}}",
+							"path": [
+								"v1",
+								"peers"
+							]
+						},
+						"description": "### POST /v1/peers\nConnectPeer attempts to establish a connection to a remote peer. This is at the networking level, and is used for communication between nodes. This is distinct from establishing a channel with a peer.\n\nField | Type | Placement | Description\n----- | ---- | --------- | ----------- \naddr | LightningAddress | body | / Lightning address of the peer, in the format `<pubkey>@host`\nperm | boolean | body | * If set, the daemon will attempt to persistently connect to the target peer.  Otherwise, the call will be synchronous.\n\n### Response \n\nThis response has no parameters."
+					},
+					"response": [
+						{
+							"name": "/v1/balance/blockchain",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{http}}://{{url}}:{{port}}/v1/balance/blockchain",
+									"protocol": "{{http}}",
+									"host": [
+										"{{url}}"
+									],
+									"port": "{{port}}",
+									"path": [
+										"v1",
+										"balance",
+										"blockchain"
+									]
+								}
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": "plain",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "text/plain; charset=utf-8"
+								},
+								{
+									"key": "X-Content-Type-Options",
+									"value": "nosniff"
+								},
+								{
+									"key": "Date",
+									"value": "Mon, 19 Nov 2018 03:53:40 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "19"
+								}
+							],
+							"cookie": [],
+							"body": "{ \n    \"total_balance\": <string>, \n    \"confirmed_balance\": <string>, \n    \"unconfirmed_balance\": <string>, \n}"
+						},
+						{
+							"name": "/v1/balance/channels",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Grpc-Metadata-macaroon",
+										"type": "text",
+										"value": "macaroon"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{http}}://{{url}}:{{port}}/v1/balance/channels",
+									"protocol": "{{http}}",
+									"host": [
+										"{{url}}"
+									],
+									"port": "{{port}}",
+									"path": [
+										"v1",
+										"balance",
+										"channels"
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": "{ \n    \"balance\": <string>, \n    \"pending_open_balance\": <string>, \n}"
+						}
+					]
+				},
+				{
+					"name": "/v1/peers",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Grpc-Metadata-macaroon",
+								"type": "text",
+								"value": "macaroon"
+							},
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{http}}://{{url}}:{{port}}/v1/peers/:pub_key",
+							"protocol": "{{http}}",
+							"host": [
+								"{{url}}"
+							],
+							"port": "{{port}}",
+							"path": [
+								"v1",
+								"peers",
+								":pub_key"
+							],
+							"variable": [
+								{
+									"key": "pub_key",
+									"value": ""
+								}
+							]
+						},
+						"description": "### DELETE /v1/peers/{pub_key}\nDisconnectPeer attempts to disconnect one peer from another identified by a given pubKey. In the case that we currently have a pending or active channel with the target peer, then this action will be not be allowed.\n\nField | Type | Placement | Description\n----- | ---- | --------- | ----------- \npub_key | string | path | \n\n### Response \n\nThis response has no parameters."
+					},
+					"response": [
+						{
+							"name": "/v1/balance/blockchain",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{http}}://{{url}}:{{port}}/v1/balance/blockchain",
+									"protocol": "{{http}}",
+									"host": [
+										"{{url}}"
+									],
+									"port": "{{port}}",
+									"path": [
+										"v1",
+										"balance",
+										"blockchain"
+									]
+								}
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": "plain",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "text/plain; charset=utf-8"
+								},
+								{
+									"key": "X-Content-Type-Options",
+									"value": "nosniff"
+								},
+								{
+									"key": "Date",
+									"value": "Mon, 19 Nov 2018 03:53:40 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "19"
+								}
+							],
+							"cookie": [],
+							"body": "{ \n    \"total_balance\": <string>, \n    \"confirmed_balance\": <string>, \n    \"unconfirmed_balance\": <string>, \n}"
+						},
+						{
+							"name": "/v1/balance/channels",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Grpc-Metadata-macaroon",
+										"type": "text",
+										"value": "macaroon"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{http}}://{{url}}:{{port}}/v1/balance/channels",
+									"protocol": "{{http}}",
+									"host": [
+										"{{url}}"
+									],
+									"port": "{{port}}",
+									"path": [
+										"v1",
+										"balance",
+										"channels"
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": "{ \n    \"balance\": <string>, \n    \"pending_open_balance\": <string>, \n}"
+						}
+					]
+				},
+				{
+					"name": "/v1/switch",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Grpc-Metadata-macaroon",
+								"type": "text",
+								"value": "macaroon"
+							},
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"start_time\":<string>,\n  \"end_time\":<string>,\n  \"index_offset\":<int64>,\n  \"num_max_events\":<int64>\n}"
+						},
+						"url": {
+							"raw": "{{http}}://{{url}}:{{port}}/v1/switch",
+							"protocol": "{{http}}",
+							"host": [
+								"{{url}}"
+							],
+							"port": "{{port}}",
+							"path": [
+								"v1",
+								"switch"
+							]
+						},
+						"description": "### POST /v1/switch\nForwardingHistory allows the caller to query the htlcswitch for a record of all HTLC's forwarded within the target time range, and integer offset within that time range. If no time-range is specified, then the first chunk of the past 24 hrs of forwarding history are returned.\n\nField | Type | Placement | Description\n----- | ---- | --------- | ----------- \nstart_time | string | body | / Start time is the starting point of the forwarding history request. All records beyond this point will be included, respecting the end time, and the index offset.\nend_time | string | body | / End time is the end point of the forwarding history request. The response will carry at most 50k records between the start time and the end time. The index offset can be used to implement pagination.\nindex_offset | int64 | body | / Index offset is the offset in the time series to start at. As each response can only contain 50k records, callers can use this to skip around within a packed time series.\nnum_max_events | int64 | body | / The max number of events to return in the response to this query.\n\n### Response \n\nField | Type | Description\n----- | ---- | ----------- \nforwarding_events | array ForwardingEvent | / A list of forwarding events from the time slice of the time series specified in the request. \nlast_offset_index | int64 | / The index of the last time in the set of returned forwarding events. Can be used to seek further, pagination style."
+					},
+					"response": [
+						{
+							"name": "/v1/balance/channels",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Grpc-Metadata-macaroon",
+										"type": "text",
+										"value": "macaroon"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{http}}://{{url}}:{{port}}/v1/balance/channels",
+									"protocol": "{{http}}",
+									"host": [
+										"{{url}}"
+									],
+									"port": "{{port}}",
+									"path": [
+										"v1",
+										"balance",
+										"channels"
+									]
+								}
+							},
+							"_postman_previewlanguage": null,
+							"header": null,
+							"cookie": [],
+							"body": "{ \n    \"balance\": <string>, \n    \"pending_open_balance\": <string>, \n}"
+						},
+						{
+							"name": "/v1/balance/blockchain",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{http}}://{{url}}:{{port}}/v1/balance/blockchain",
+									"protocol": "{{http}}",
+									"host": [
+										"{{url}}"
+									],
+									"port": "{{port}}",
+									"path": [
+										"v1",
+										"balance",
+										"blockchain"
+									]
+								}
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": "plain",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "text/plain; charset=utf-8"
+								},
+								{
+									"key": "X-Content-Type-Options",
+									"value": "nosniff"
+								},
+								{
+									"key": "Date",
+									"value": "Mon, 19 Nov 2018 03:53:40 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "19"
+								}
+							],
+							"cookie": [],
+							"body": "{ \n    \"total_balance\": <string>, \n    \"confirmed_balance\": <string>, \n    \"unconfirmed_balance\": <string>, \n}"
+						}
+					]
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"id": "165f5440-0cce-4b01-8ff7-8044d41010e5",
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"id": "5613836d-8944-48da-9ecc-b88a04b106da",
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"id": "0e36133e-2364-42f4-91ec-183db31ef5e3",
+			"key": "http",
+			"value": "http",
+			"type": "string"
+		},
+		{
+			"id": "5ccf1269-f42a-4336-90c9-b6a1ad61b528",
+			"key": "url",
+			"value": "locahost",
+			"type": "string"
+		},
+		{
+			"id": "e7de202a-5905-476b-bcfe-33b662598591",
+			"key": "port",
+			"value": "8080",
+			"type": "string"
+		}
+	]
+}
